@@ -6,6 +6,7 @@ import TransitRouter
 import Model exposing (..)
 import Routes exposing (..)
 import TaskPage
+import LoginPage
 
 
 initialModel : Model
@@ -13,6 +14,7 @@ initialModel =
   { transitRouter = TransitRouter.empty EmptyRoute
   , page = 0
   , taskModel = TaskPage.init
+  , loginModel = LoginPage.init
   }
 
 
@@ -43,6 +45,11 @@ update action model =
     NoOp ->
       (model, Effects.none)
 
+    LoginPageAction taskAction ->
+      let (model', effects) = LoginPage.update taskAction model.loginModel
+      in ( { model | loginModel = model' }
+         , Effects.map LoginPageAction effects )
+
     TaskPageAction taskAction ->
       let (model', effects) = TaskPage.update taskAction model.taskModel
       in ( { model | taskModel = model' }
@@ -60,6 +67,9 @@ mountRoute prevRoute route model =
     -- like an HTTP request to load specific data
 
     Home ->
+      (model, Effects.none)
+
+    Login ->
       (model, Effects.none)
 
     Page p ->

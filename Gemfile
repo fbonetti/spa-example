@@ -6,8 +6,12 @@ gem 'pg'
 gem 'rake'
 gem 'bcrypt'
 
-group :development, :test do
+group :development do
   gem 'rerun'
+  gem 'filewatcher'
+end
+
+group :development, :test do
   gem 'pry'
   gem 'rspec'
 end

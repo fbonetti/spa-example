@@ -7,6 +7,7 @@ import TransitRouter
 
 type Route
   = Home
+  | Login
   | Page Int
   | TaskPage
   | EmptyRoute
@@ -15,6 +16,7 @@ type Route
 routeParsers : List (Matcher Route)
 routeParsers =
   [ static Home "/"
+  , static Login "/login"
   , dyn1 Page "/page/" int ""
   , static TaskPage "/task"
   ]
@@ -30,6 +32,7 @@ encode : Route -> String
 encode route =
   case route of
     Home -> "/"
+    Login -> "/login"
     Page i -> "/page/" ++ toString i
     TaskPage -> "/task"
     EmptyRoute -> ""

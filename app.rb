@@ -14,12 +14,14 @@ class SpaExampleApp < Sinatra::Base
   end
 
   post '/api/v1/login' do
-    if user
+    user = User.find_by(email: params[:email])
+
+    if user && user.authenticate(params[:password])
+      session[:user_id] = user.id
+      { message: 'Success' }
+    else
       status 404
       { error: 'Email or password invalid' }.to_json
-    else
-      session[:user_id] = user.id
-      user.to_json
     end
   end
 
@@ -40,7 +42,7 @@ class SpaExampleApp < Sinatra::Base
 
   get '/*' do
     content_type :html
-    File.read('./frontend/src/index.html')
+    File.read('./frontend/index.html')
   end
 
   private
@@ -50,14 +52,6 @@ class SpaExampleApp < Sinatra::Base
   end
 
   def current_user
-    @current_user ||= begin
-      user = User.find_by(email: params[:email])
-
-      if user && user.authenticate(params[:password])
-        user
-      else
-        nil
-      end
-    end
+    @current_user ||= User.find_by(id: session[:user_id])
   end
 end

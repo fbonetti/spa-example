@@ -12,15 +12,17 @@ import TransitRouter exposing (getTransition)
 import Model exposing (..)
 import Routes exposing (..)
 import TaskPage
+import LoginPage
 
 
 view : Address Action -> Model -> Html
 view address model =
   div
-    [ ]
+    [ class "container" ]
     [ h1 [] [ text "Elm TransitRouter example" ]
     , div [ class "menu" ]
         [ a (clickTo <| Routes.encode Home) [ text "Home" ]
+        , a (clickTo <| Routes.encode Login) [ text "Login" ]
         , a (clickTo <| Routes.encode (Page 1)) [ text "Page 1" ]
         , a (clickTo <| Routes.encode (Page 2)) [ text "Page 2" ]
         , a (clickTo <| Routes.encode (TaskPage)) [ text "Task" ]
@@ -32,6 +34,8 @@ view address model =
         [ case (TransitRouter.getRoute model) of
             Home ->
               text <| "This is home"
+            Login ->
+              LoginPage.view (Signal.forwardTo address LoginPageAction) model.loginModel
             Page _ ->
               text <| "This is page " ++ toString model.page
             TaskPage ->
