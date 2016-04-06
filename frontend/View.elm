@@ -11,8 +11,7 @@ import TransitRouter exposing (getTransition)
 
 import Model exposing (..)
 import Routes exposing (..)
-import TaskPage
-import LoginPage
+import Pages.Login
 
 
 view : Address Action -> Model -> Html
@@ -25,7 +24,6 @@ view address model =
         , a (clickTo <| Routes.encode Login) [ text "Login" ]
         , a (clickTo <| Routes.encode (Page 1)) [ text "Page 1" ]
         , a (clickTo <| Routes.encode (Page 2)) [ text "Page 2" ]
-        , a (clickTo <| Routes.encode (TaskPage)) [ text "Task" ]
         ]
     , div
         [ class "content"
@@ -35,11 +33,9 @@ view address model =
             Home ->
               text <| "This is home"
             Login ->
-              LoginPage.view (Signal.forwardTo address LoginPageAction) model.loginModel
+              Pages.Login.view (Signal.forwardTo address LoginPageAction) model.loginModel
             Page _ ->
               text <| "This is page " ++ toString model.page
-            TaskPage ->
-              TaskPage.view (Signal.forwardTo address TaskPageAction) model.taskModel
             EmptyRoute ->
               text <| ""
         ]

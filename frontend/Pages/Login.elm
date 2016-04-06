@@ -1,16 +1,19 @@
-module LoginPage where
+module Pages.Login where
 
 import Effects exposing (Effects)
 import Html exposing (Html, div, text, button, input, label, form)
 import Html.Attributes exposing (class, type', value)
 import Html.Events exposing (onSubmit, onClick)
 import Routes
-import Signal
+import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput)
-import Http exposing (defaultSettings)
-import Json.Encode
+import Util exposing (onInput, nothing)
+import Json.Encode exposing (Value)
+import Json.Decode exposing ((:=))
+import Bootstrap.Alert
+import Http.Extra exposing (..)
 
+-- MODEL
 
 type alias Model =
   { email : String
@@ -22,15 +25,15 @@ type alias Model =
 init : Model
 init = Model "" "" Nothing
 
+-- UPDATE
 
 type Action
     = NoOp
     | SetEmail String
     | SetPassword String
     | AttemptLogin
-    | ShowError Http.RawError
-    | HandleResponse (Maybe Http.Response)
-
+    | HandleLoginResponse (Result (Error String) (Response String))
+    | ClearError
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -41,30 +44,31 @@ update action model =
       ({ model | email = email }, Effects.none)
     SetPassword password ->
       ({ model | password = password }, Effects.none)
-    ShowError error ->
-      (model, Effects.none)
     AttemptLogin ->
       (model, postLogin model)
-    HandleResponse response ->
+    HandleLoginResponse response ->
       case response of
-        Nothing -> 
-          (model, Effects.none)
-        Just response ->
-          if response.status == 200 then
-            ( model
-            , Effects.map (\_ -> NoOp) (Routes.redirect Routes.Home)
-            )
-          else
-            ( { model | error = Just "Something went wrong." }
-            , Effects.none
-            )
+        Ok response -> 
+          ( { model | error = Nothing }
+          , Effects.map (always NoOp) (Routes.redirect Routes.Home)
+          )
+        Err error ->
+          ( { model | error = Just (displayError error) }
+          , Effects.none
+          )
+
+    ClearError ->
+      ({ model | error = Nothing}, Effects.none)
+
+-- VIEW
 
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ class "panel panel-default" ]
     [ div [ class "panel-heading" ] [ text "Please login" ]
     , div [ class "panel-body" ]
-        [ form [ onSubmit address AttemptLogin ]
+        [ errorAlert address model.error
+        , form [ onSubmit address AttemptLogin ]
           [ div [ class "form-group" ]
             [ label [ class "control-label" ] [ text "Email" ]
             , input [ type' "text", class "form-control", onInput address SetEmail ] []
@@ -76,9 +80,17 @@ view address model =
           ]
         , input [ class "btn btn-primary btn-block", type' "submit", value "Login", onClick address AttemptLogin ] []
         ]
-        , text model.email
-        , text model.password
     ]
+
+errorAlert : Address Action -> Maybe String -> Html
+errorAlert address error =
+  case error of
+    Just message ->
+      Bootstrap.Alert.dismissible address ClearError "danger" message
+    Nothing ->
+      nothing
+
+-- TASKS AND HELPERS
 
 postLogin : Model -> Effects Action
 postLogin model =
@@ -86,19 +98,31 @@ postLogin model =
     json = Json.Encode.object
       [ ("email", Json.Encode.string model.email)
       , ("password", Json.Encode.string model.password)
-      ]    
-    body = Json.Encode.encode 0 json |> Http.string
+      ]
   in
-    postJson "/api/v1/login" body
-      |> Task.toMaybe
-      |> Task.map HandleResponse
+    post "/api/v1/login"
+      |> withJsonBody json
+      |> withHeader "Content-Type" "application/json"
+      |> withCredentials
+      |> send (jsonReader successDecoder) (jsonReader errorDecoder)
+      |> Task.toResult
+      |> Task.map HandleLoginResponse
       |> Effects.task
 
-postJson : String -> Http.Body -> Task Http.RawError Http.Response
-postJson url body =
-  Http.send { defaultSettings | withCredentials = True }
-    { verb = "POST"
-    , headers = [("Content-type", "application/json")]
-    , url = url
-    , body = body
-    }
+displayError : Error String -> String
+displayError error =
+  case error of
+    BadResponse response -> response.data
+    _ -> "Something went wrong"
+
+successDecoder : Json.Decode.Decoder String
+successDecoder =
+  Json.Decode.object1
+    identity
+    ("message" := Json.Decode.string)
+
+errorDecoder : Json.Decode.Decoder String
+errorDecoder =
+  Json.Decode.object1
+    identity
+    ("error" := Json.Decode.string)

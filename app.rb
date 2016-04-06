@@ -11,14 +11,18 @@ class SpaExampleApp < Sinatra::Base
 
   before do
     content_type :json
+
+    request.body.rewind
+    body = request.body.read
+    @payload = body.empty? ? {} : JSON.parse(body)
   end
 
   post '/api/v1/login' do
-    user = User.find_by(email: params[:email])
+    user = User.find_by(email: @payload['email'])
 
-    if user && user.authenticate(params[:password])
+    if user && user.authenticate(@payload['password'])
       session[:user_id] = user.id
-      { message: 'Success' }
+      { message: 'Success' }.to_json
     else
       status 404
       { error: 'Email or password invalid' }.to_json

@@ -1,6 +1,6 @@
 module Util where
 
-import Html exposing (Html, Attribute)
+import Html exposing (Html, Attribute, text)
 import Html.Events exposing (on, targetValue)
 import Http
 
@@ -11,3 +11,6 @@ onInput address contentToValue =
 bodyEncode : List (String,String) -> Http.Body
 bodyEncode =
   List.map (\(key,value) -> Http.stringData key value) >> Http.multipart
+
+nothing : Html
+nothing = text ""

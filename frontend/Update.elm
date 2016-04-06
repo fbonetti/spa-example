@@ -5,16 +5,14 @@ import TransitRouter
 
 import Model exposing (..)
 import Routes exposing (..)
-import TaskPage
-import LoginPage
+import Pages.Login
 
 
 initialModel : Model
 initialModel =
   { transitRouter = TransitRouter.empty EmptyRoute
   , page = 0
-  , taskModel = TaskPage.init
-  , loginModel = LoginPage.init
+  , loginModel = Pages.Login.init
   }
 
 
@@ -46,14 +44,9 @@ update action model =
       (model, Effects.none)
 
     LoginPageAction taskAction ->
-      let (model', effects) = LoginPage.update taskAction model.loginModel
+      let (model', effects) = Pages.Login.update taskAction model.loginModel
       in ( { model | loginModel = model' }
          , Effects.map LoginPageAction effects )
-
-    TaskPageAction taskAction ->
-      let (model', effects) = TaskPage.update taskAction model.taskModel
-      in ( { model | taskModel = model' }
-         , Effects.map TaskPageAction effects )
 
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
@@ -74,9 +67,6 @@ mountRoute prevRoute route model =
 
     Page p ->
       ({ model | page = p }, Effects.none)
-
-    TaskPage ->
-      (model, Effects.none)
 
     EmptyRoute ->
       (model, Effects.none)

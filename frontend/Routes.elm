@@ -9,7 +9,6 @@ type Route
   = Home
   | Login
   | Page Int
-  | TaskPage
   | EmptyRoute
 
 
@@ -18,7 +17,6 @@ routeParsers =
   [ static Home "/"
   , static Login "/login"
   , dyn1 Page "/page/" int ""
-  , static TaskPage "/task"
   ]
 
 
@@ -34,7 +32,6 @@ encode route =
     Home -> "/"
     Login -> "/login"
     Page i -> "/page/" ++ toString i
-    TaskPage -> "/task"
     EmptyRoute -> ""
 
 redirect : Route -> Effects ()
