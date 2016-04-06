@@ -17,6 +17,26 @@ class SpaExampleApp < Sinatra::Base
     @payload = body.empty? ? {} : JSON.parse(body)
   end
 
+  post '/api/v1/register' do
+    user = User.new(
+      @payload.slice(
+        'first_name',
+        'last_name',
+        'email',
+        'password',
+        'password_confirmation',
+      )
+    )
+
+    if user.save
+      session[:user_id] = user.id
+      { message: 'Success' }.to_json
+    else
+      status 400
+      { error: user.errors.full_messages.join(', ') }.to_json
+    end
+  end
+
   post '/api/v1/login' do
     user = User.find_by(email: @payload['email'])
 
@@ -24,7 +44,7 @@ class SpaExampleApp < Sinatra::Base
       session[:user_id] = user.id
       { message: 'Success' }.to_json
     else
-      status 404
+      status 400
       { error: 'Email or password invalid' }.to_json
     end
   end

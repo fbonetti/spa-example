@@ -1,8 +1,8 @@
 module Pages.Login where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text, button, input, label, form)
-import Html.Attributes exposing (class, type', value)
+import Html exposing (Html, div, p, text, button, input, label, form, br, a)
+import Html.Attributes exposing (class, type', value, href)
 import Html.Events exposing (onSubmit, onClick)
 import Routes
 import Signal exposing (Address)
@@ -64,22 +64,32 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [ class "panel panel-default" ]
-    [ div [ class "panel-heading" ] [ text "Please login" ]
-    , div [ class "panel-body" ]
-        [ errorAlert address model.error
-        , form [ onSubmit address AttemptLogin ]
-          [ div [ class "form-group" ]
-            [ label [ class "control-label" ] [ text "Email" ]
-            , input [ type' "text", class "form-control", onInput address SetEmail ] []
-            ]
-          , div [ class "form-group" ]
-            [ label [ class "control-label" ] [ text "Password" ]
-            , input [ type' "password", class "form-control", onInput address SetPassword ] []
-            ]
+  div [ class "row" ]
+    [ div [ class "col-md-6 col-md-offset-3" ]
+      [ div [ class "panel panel-default" ]
+          [ div [ class "panel-heading" ] [ text "Please login or register" ]
+          , div [ class "panel-body" ]
+              [ errorAlert address model.error
+              , form [ onSubmit address AttemptLogin ]
+                [ div [ class "form-group" ]
+                  [ label [ class "control-label" ] [ text "Email" ]
+                  , input [ type' "text", class "form-control", onInput address SetEmail ] []
+                  ]
+                , div [ class "form-group" ]
+                  [ label [ class "control-label" ] [ text "Password" ]
+                  , input [ type' "password", class "form-control", onInput address SetPassword ] []
+                  ]
+                ]
+              , input [ class "btn btn-primary btn-block", type' "submit", value "Login", onClick address AttemptLogin ] []
+              , br [] []
+              , p [ class "text-center" ]
+                  [ text "New to SPA App? "
+                  , a (Routes.clickTo (Routes.encode Routes.Register))
+                      [ text "Click here to register" ]
+                  ]
+              ]
           ]
-        , input [ class "btn btn-primary btn-block", type' "submit", value "Login", onClick address AttemptLogin ] []
-        ]
+      ]
     ]
 
 errorAlert : Address Action -> Maybe String -> Html
