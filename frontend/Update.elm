@@ -59,12 +59,11 @@ update action model =
       TransitRouter.update routerConfig routeAction model
 
 
+-- Trigger an update or an effect when a route has mounted
+
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
 mountRoute prevRoute route model =
   case route of
-
-    -- in a typical SPA, you might have to trigger tasks when landing on a page,
-    -- like an HTTP request to load specific data
 
     Home ->
       (model, Effects.none)

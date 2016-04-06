@@ -9,7 +9,7 @@ dismissible : Address a -> a -> String -> String -> Html
 dismissible address action alertClass message =
   div [ class ("alert alert-warning alert-" ++ alertClass) ]
     [ button [ type' "button", class "close", onClick address action ]
-        [ span [] [ text "x" ]
+        [ span [] [ text "×" ]
         ]
     , text message
     ]

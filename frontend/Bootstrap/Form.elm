@@ -1,8 +1,8 @@
-module Bootstrap.Form where
+module Bootstrap.Form (textInput, passwordInput, selectInput) where
 
-import Html exposing (Html, div, label, input, span, text)
-import Html.Attributes exposing (class, type', value)
-import Util exposing (onInput)
+import Html exposing (Html, div, label, input, span, text, select, option)
+import Html.Attributes exposing (class, type', value, selected)
+import Util exposing (onInput, onChange)
 import Signal exposing (Address)
 import String
 
@@ -19,3 +19,17 @@ genericInput inputType address action inputLabel inputValue error =
     , input [ type' inputType, class "form-control", onInput address action, value inputValue ] []
     , span [ class "help-block" ] [ text error ]
     ]
+
+selectInput : Address a -> (String -> a) -> List (String,String) -> String -> String -> String -> Html
+selectInput address action options inputLabel inputValue error =
+  div [ class ("form-group " ++ (if String.isEmpty error then "" else "has-error")) ]
+    [ label [ class "control-label" ] [ text inputLabel ]
+    , select [ class "form-control", onChange address action ] (renderOptions options inputValue)
+    , span [ class "help-block" ] [ text error ]
+    ]  
+
+renderOptions : List (String,String) -> String -> List Html
+renderOptions options selectedVal =
+  List.map
+    (\(lab,val) -> option [ value val, selected (val == selectedVal) ] [ text lab ] )
+    (("","") :: options)

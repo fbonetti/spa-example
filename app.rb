@@ -25,6 +25,7 @@ class SpaExampleApp < Sinatra::Base
         'email',
         'password',
         'password_confirmation',
+        'type'
       )
     )
 
@@ -54,7 +55,11 @@ class SpaExampleApp < Sinatra::Base
     { message: 'You successfully logged out' }
   end
 
-  get '/api/v1/users/:id/meals' do
+  get '/api/v1/users' do
+
+  end
+
+  get '/api/v1/users/:id' do
     if logged_in?
       { message: 'asdf' }.to_json
     else

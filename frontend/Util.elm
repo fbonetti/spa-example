@@ -8,9 +8,9 @@ onInput : Signal.Address a -> (String -> a) -> Attribute
 onInput address contentToValue =
   on "input" targetValue (\str -> Signal.message address (contentToValue str))
 
-bodyEncode : List (String,String) -> Http.Body
-bodyEncode =
-  List.map (\(key,value) -> Http.stringData key value) >> Http.multipart
+onChange : Signal.Address a -> (String -> a) -> Attribute
+onChange address contentToValue =
+  on "change" targetValue (\str -> Signal.message address (contentToValue str))
 
 nothing : Html
 nothing = text ""

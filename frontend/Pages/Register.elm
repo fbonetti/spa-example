@@ -25,13 +25,14 @@ type alias Model =
   , email : String
   , password : String
   , passwordConfirmation : String
+  , accountType : String
   , error : Maybe String
   , validate : Bool
   }
 
 
 init : Model
-init = Model "" "" "" "" "" Nothing False
+init = Model "" "" "" "" "" "" Nothing False
 
 formValid : Model -> Bool
 formValid model =
@@ -41,6 +42,7 @@ formValid model =
     , emailValid
     , passwordValid
     , passwordConfirmationValid
+    , accountTypeValid
     ]
 
 nonEmptyString = String.length >> flip (>) 0
@@ -52,6 +54,7 @@ emailValid {email} = Regex.contains (regex ".+\\@.+\\..+") email
 passwordValid {password} = String.length password >= 8
 passwordConfirmationValid {password, passwordConfirmation} =
   String.length passwordConfirmation > 0 && passwordConfirmation == password
+accountTypeValid {accountType} = nonEmptyString accountType
 
 firstNameErrorMessage model =
   if not model.validate || firstNameValid model then
@@ -83,6 +86,11 @@ passwordConfirmationErrorMessage model =
   else
     "Password confirmation must match password"
 
+accountTypeErrorMessage model =
+  if not model.validate || accountTypeValid model then
+    ""
+  else
+    "Account type required"
 
 -- UPDATE
 
@@ -93,6 +101,7 @@ type Action
     | SetEmail String
     | SetPassword String
     | SetPasswordConfirmation String
+    | SetAccountType String
     | AttemptRegister
     | HandleRegisterResponse (Result (Error String) (Response String))
     | ClearError
@@ -112,6 +121,8 @@ update action model =
       ({ model | password = password }, Effects.none)
     SetPasswordConfirmation passwordConfirmation ->
       ({ model | passwordConfirmation = passwordConfirmation }, Effects.none)
+    SetAccountType accountType ->
+      ({ model | accountType = accountType }, Effects.none)
     AttemptRegister ->
       if formValid model then
         (model, postRegister model)
@@ -147,6 +158,7 @@ view address model =
                 , Bootstrap.Form.textInput address SetEmail "Email" model.email (emailErrorMessage model)
                 , Bootstrap.Form.passwordInput address SetPassword "Password" model.password (passwordErrorMessage model)
                 , Bootstrap.Form.passwordInput address SetPasswordConfirmation "Password Confirmation" model.passwordConfirmation (passwordConfirmationErrorMessage model)
+                , Bootstrap.Form.selectInput address SetAccountType accountTypeOptions "Account Type" model.accountType (accountTypeErrorMessage model)
                 ]
               , input [ submitBtnClass model, type' "submit", value "Login", onClick address AttemptRegister ] []
               , br [] []
@@ -159,6 +171,13 @@ view address model =
           ]
       ]
     ]
+
+accountTypeOptions : List (String,String)
+accountTypeOptions =
+  [ ("Regular User", "regular_user")
+  , ("User Manager", "user_manager")
+  , ("Admin", "admin")
+  ]
 
 submitBtnClass model =
   if not model.validate || formValid model then
