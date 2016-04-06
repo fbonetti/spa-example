@@ -1,0 +1,18 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+
+development:
+  <<: *default
+  database: spa_example_development
+
+test:
+  <<: *default
+  database: spa_example_test
+
+production:
+  <<: *default
+  database: spa_example_production
+  username: defaultapp
+  password: <%= ENV['DEFAULTAPP_DATABASE_PASSWORD'] %>
