@@ -22,6 +22,7 @@ class User < ActiveRecord::Base
     attrs = attributes.slice('first_name', 'last_name')
     attrs['meals'] = meals.map do |meal|
       {
+        'id' => meal.id,
         'description' => meal.description,
         'calories' => meal.calories,
         'created_at' => meal.created_at.to_i

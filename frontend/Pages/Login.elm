@@ -3,11 +3,10 @@ module Pages.Login where
 import Effects exposing (Effects)
 import Html exposing (Html, div, p, text, button, input, label, form, br, a)
 import Html.Attributes exposing (class, type', value, href)
-import Html.Events exposing (onSubmit, onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing)
+import Util exposing (onInput, onSubmitPreventDefault, nothing)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Alert
@@ -70,7 +69,7 @@ view address model =
           [ div [ class "panel-heading" ] [ text "Please login or register" ]
           , div [ class "panel-body" ]
               [ errorAlert address model.error
-              , form [ onSubmit address AttemptLogin ]
+              , form [ onSubmitPreventDefault address AttemptLogin ]
                 [ div [ class "form-group" ]
                   [ label [ class "control-label" ] [ text "Email" ]
                   , input [ type' "text", class "form-control", onInput address SetEmail ] []
@@ -79,8 +78,8 @@ view address model =
                   [ label [ class "control-label" ] [ text "Password" ]
                   , input [ type' "password", class "form-control", onInput address SetPassword ] []
                   ]
+                , input [ class "btn btn-primary btn-block", type' "submit", value "Login" ] []
                 ]
-              , input [ class "btn btn-primary btn-block", type' "submit", value "Login", onClick address AttemptLogin ] []
               , br [] []
               , p [ class "text-center" ]
                   [ text "New to SPA App? "

@@ -7,7 +7,7 @@ import Html.Events exposing (onSubmit, onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing)
+import Util exposing (onInput, onSubmitPreventDefault, nothing)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Alert
@@ -152,15 +152,15 @@ view address model =
           [ div [ class "panel-heading" ] [ text "New account" ]
           , div [ class "panel-body" ]
               [ errorAlert address model.error
-              , form [ onSubmit address AttemptRegister ]
+              , form [ onSubmitPreventDefault address AttemptRegister ]
                 [ Bootstrap.Form.textInput address SetFirstName "First Name" model.firstName (firstNameErrorMessage model)
                 , Bootstrap.Form.textInput address SetLastName "Last Name" model.lastName (lastNameErrorMessage model)
                 , Bootstrap.Form.textInput address SetEmail "Email" model.email (emailErrorMessage model)
                 , Bootstrap.Form.passwordInput address SetPassword "Password" model.password (passwordErrorMessage model)
                 , Bootstrap.Form.passwordInput address SetPasswordConfirmation "Password Confirmation" model.passwordConfirmation (passwordConfirmationErrorMessage model)
                 , Bootstrap.Form.selectInput address SetAccountType accountTypeOptions "Account Type" model.accountType (accountTypeErrorMessage model)
+                , input [ submitBtnClass model, type' "submit", value "Login", onClick address AttemptRegister ] []
                 ]
-              , input [ submitBtnClass model, type' "submit", value "Login", onClick address AttemptRegister ] []
               , br [] []
               , p [ class "text-center" ]
                   [ text "Already have an account? "

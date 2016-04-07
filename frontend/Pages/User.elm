@@ -1,7 +1,7 @@
 module Pages.User where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, table, thead, tbody, th, tr, td, text)
+import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onSubmit, onClick)
 import Routes
@@ -29,7 +29,8 @@ type alias User =
   }
 
 type alias Meal =
-  { description : String
+  { id : Int
+  , description : String
   , calories : Int
   , createdAt : Int
   }
@@ -73,19 +74,42 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   case model.user of
     Just user ->
-      mealsTable address user
+      renderPage address user
     Nothing ->
       text (model.error |> Maybe.withDefault "Something went wrong")
 
-mealsTable : Signal.Address Action -> User -> Html
+renderPage address user =
+  div []
+    [ userStats user
+    , addMeal address user
+    , hr [] []
+    , mealsTable address user
+    ]
+
+userStats : User -> Html
+userStats user =
+  h2 [] [ text (user.firstName ++ " " ++ user.lastName ++ "'s Meals") ]
+
+addMeal : Address Action -> User -> Html
+addMeal address user =
+  div []
+    [ h3 [] [ text "Record Meal" ]
+    ]
+
+mealsTable : Address Action -> User -> Html
 mealsTable address user =
-  table [ class "table table-striped" ]
-    [ thead []
-        [ th [] [ text "Recorded At" ]
-        , th [] [ text "Description" ]
-        , th [] [ text "Calories" ]
+  div []
+    [ h3 [] [ text "All Meals" ]
+    , table [ class "table table-striped" ]
+        [ thead []
+            [ tr [] 
+              [ th [] [ text "Recorded At" ]
+              , th [] [ text "Description" ]
+              , th [] [ text "Calories" ]
+              ]
+            ]
+        , tbody [] (List.map renderRow user.meals)
         ]
-    , tbody [] (List.map renderRow user.meals)
     ]
 
 renderRow {description,calories,createdAt} =
@@ -124,8 +148,9 @@ userDecoder =
 
 mealDecoder : Json.Decode.Decoder Meal
 mealDecoder =
-  Json.Decode.object3
+  Json.Decode.object4
     Meal
+    ("id" := Json.Decode.int)
     ("description" := Json.Decode.string)
     ("calories" := Json.Decode.int)
     ("created_at" := Json.Decode.int)
