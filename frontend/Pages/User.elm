@@ -12,6 +12,8 @@ import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Alert
 import Http.Extra exposing (..)
+import Date
+import Date.Format
 
 -- MODEL
 
@@ -79,19 +81,23 @@ mealsTable : Signal.Address Action -> User -> Html
 mealsTable address user =
   table [ class "table table-striped" ]
     [ thead []
-        [ th [] [ text "Description" ]
+        [ th [] [ text "Recorded At" ]
+        , th [] [ text "Description" ]
         , th [] [ text "Calories" ]
-        , th [] [ text "Timestamp" ]
         ]
     , tbody [] (List.map renderRow user.meals)
     ]
 
 renderRow {description,calories,createdAt} =
   tr []
-    [ td [] [ text description ]
+    [ td [] [ (formatTimestamp >> text) createdAt ]
+    , td [] [ text description ]
     , td [] [ (toString >> text) calories ]
-    , td [] [ (toString >> text) createdAt ]
     ]
+
+formatTimestamp : Int -> String
+formatTimestamp =
+  toFloat >> (*) 1000 >> Date.fromTime >> Date.Format.format "%b %e, %Y at %l:%M %P"
 
 -- TASKS AND HELPERS
 

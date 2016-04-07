@@ -65,7 +65,7 @@ class SpaExampleApp < Sinatra::Base
 
   get '/api/v1/users/:id' do
     if logged_in?
-      user = User.find_by(id: params[:id])
+      user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
       if user
         if current_user.id == user.id || user.admin?
           user.safe_attributes.to_json
