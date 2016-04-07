@@ -128,8 +128,8 @@ update action model =
         (model, postRegister model)
       else
         ({ model | validate = True}, Effects.none)
-    HandleRegisterResponse response ->
-      case response of
+    HandleRegisterResponse result ->
+      case result of
         Ok response -> 
           ( { model | error = Nothing }
           , Effects.map (always NoOp) (Routes.redirect Routes.Home)

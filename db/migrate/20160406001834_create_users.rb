@@ -6,7 +6,7 @@ class CreateUsers < ActiveRecord::Migration
       t.string :email
       t.string :type
 
-      t.timestamp
+      t.timestamps
     end
   end
 end

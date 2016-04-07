@@ -7,6 +7,7 @@ import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login
 import Pages.Register
+import Pages.User
 
 
 initialModel : Model
@@ -15,6 +16,7 @@ initialModel =
   , page = 0
   , loginModel = Pages.Login.init
   , registerModel = Pages.Register.init
+  , userModel = Pages.User.init
   }
 
 
@@ -55,6 +57,11 @@ update action model =
       in ( { model | registerModel = model' }
          , Effects.map RegisterPageAction effects )
 
+    UserPageAction taskAction ->
+      let (model', effects) = Pages.User.update taskAction model.userModel
+      in ( { model | userModel = model' }
+         , Effects.map UserPageAction effects )
+
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
 
@@ -73,6 +80,9 @@ mountRoute prevRoute route model =
 
     Register ->
       (model, Effects.none)
+
+    User id ->
+      (model, Effects.map UserPageAction (Pages.User.fetchUser id))
 
     Page p ->
       ({ model | page = p }, Effects.none)

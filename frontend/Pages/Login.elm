@@ -32,7 +32,7 @@ type Action
     | SetEmail String
     | SetPassword String
     | AttemptLogin
-    | HandleLoginResponse (Result (Error String) (Response String))
+    | HandleLoginResponse (Result (Error String) (Response Int))
     | ClearError
 
 update : Action -> Model -> (Model, Effects Action)
@@ -50,7 +50,7 @@ update action model =
       case response of
         Ok response -> 
           ( { model | error = Nothing }
-          , Effects.map (always NoOp) (Routes.redirect Routes.Home)
+          , Effects.map (always NoOp) (Routes.redirect (Routes.User response.data))
           )
         Err error ->
           ( { model | error = Just (displayError error) }
@@ -125,11 +125,11 @@ displayError error =
     BadResponse response -> response.data
     _ -> "Something went wrong"
 
-successDecoder : Json.Decode.Decoder String
+successDecoder : Json.Decode.Decoder Int
 successDecoder =
   Json.Decode.object1
     identity
-    ("message" := Json.Decode.string)
+    ("user_id" := Json.Decode.int)
 
 errorDecoder : Json.Decode.Decoder String
 errorDecoder =

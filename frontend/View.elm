@@ -13,6 +13,7 @@ import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login
 import Pages.Register
+import Pages.User
 
 
 view : Address Action -> Model -> Html
@@ -38,6 +39,8 @@ view address model =
               Pages.Login.view (Signal.forwardTo address LoginPageAction) model.loginModel
             Register ->
               Pages.Register.view (Signal.forwardTo address RegisterPageAction) model.registerModel
+            User _ ->
+              Pages.User.view (Signal.forwardTo address UserPageAction) model.userModel
             Page _ ->
               text <| "This is page " ++ toString model.page
             EmptyRoute ->

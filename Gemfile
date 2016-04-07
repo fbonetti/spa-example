@@ -1,10 +1,11 @@
 source 'https://rubygems.org'
 
-gem 'sinatra'
-gem 'sinatra-activerecord'
-gem 'pg'
-gem 'rake'
-gem 'bcrypt'
+gem 'sinatra', '~> 1.4.7'
+gem 'sinatra-activerecord', '~> 2.0.9'
+gem 'pg', '~> 0.18.4'
+gem 'rake', '~> 11.1.2'
+gem 'bcrypt', '~> 3.1.11'
+gem 'dotenv', '~> 2.1.1'
 
 group :development do
   gem 'rerun'

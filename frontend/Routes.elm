@@ -14,6 +14,7 @@ type Route
   = Home
   | Login
   | Register
+  | User Int
   | Page Int
   | EmptyRoute
 
@@ -23,6 +24,7 @@ routeParsers =
   [ static Home "/"
   , static Login "/login"
   , static Register "/register"
+  , dyn1 User "/users/" int "" 
   , dyn1 Page "/page/" int ""
   ]
 
@@ -39,6 +41,7 @@ encode route =
     Home -> "/"
     Login -> "/login"
     Register -> "/register"
+    User id -> "/users/" ++ toString id
     Page i -> "/page/" ++ toString i
     EmptyRoute -> ""
 

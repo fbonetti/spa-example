@@ -1,13 +1,17 @@
+require 'dotenv'
+Dotenv.load
+
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/activerecord'
-require './models/user'
-require './models/meal'
+require 'dotenv'
+
+Dir.glob('./models/*.rb').each { |r| require r}
 
 class SpaExampleApp < Sinatra::Base
   register Sinatra::ActiveRecordExtension
 
-  set :sessions, true
+  use Rack::Session::Cookie, expire_after: 604800, secret: ENV['SESSION_SECRET']
 
   before do
     content_type :json
@@ -43,7 +47,7 @@ class SpaExampleApp < Sinatra::Base
 
     if user && user.authenticate(@payload['password'])
       session[:user_id] = user.id
-      { message: 'Success' }.to_json
+      { user_id: user.id }.to_json
     else
       status 400
       { error: 'Email or password invalid' }.to_json
@@ -61,9 +65,21 @@ class SpaExampleApp < Sinatra::Base
 
   get '/api/v1/users/:id' do
     if logged_in?
-      { message: 'asdf' }.to_json
+      user = User.find_by(id: params[:id])
+      if user
+        if current_user.id == user.id || user.admin?
+          user.safe_attributes.to_json
+        else
+          status 403
+          { message: "You're not allowed to view this user" }
+        end
+      else
+        status 404
+        { message: 'User not found' }.to_json
+      end
     else
-      { message: 'one' }.to_json
+      status 401
+      { message: 'You need to be logged in to see this page' }.to_json
     end
   end
 
