@@ -13,3 +13,9 @@ dismissible address action alertClass message =
         ]
     , text message
     ]
+
+static : String -> String -> Html
+static alertClass message =
+  div [ class ("alert alert-warning alert-" ++ alertClass) ]
+    [ text message
+    ]

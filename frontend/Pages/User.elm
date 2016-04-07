@@ -1,8 +1,8 @@
 module Pages.User where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form)
-import Html.Attributes exposing (class, type')
+import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option)
+import Html.Attributes exposing (class, type', value)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
@@ -10,10 +10,12 @@ import Util exposing (onInput, nothing, onSubmitPreventDefault)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Form
+import Bootstrap.Alert
 import Http.Extra exposing (..)
 import Date
 import Date.Format
 import String
+import Set
 
 -- MODEL
 
@@ -103,7 +105,7 @@ view address model =
     Just user ->
       renderPage address model user
     Nothing ->
-      text (model.error |> Maybe.withDefault "Something went wrong")
+      Bootstrap.Alert.static "danger" (model.error |> Maybe.withDefault "Something went wrong")
 
 renderPage address model user =
   div []
@@ -132,6 +134,7 @@ mealsTable : Address Action -> User -> Html
 mealsTable address user =
   div []
     [ h3 [] [ text "All Meals" ]
+    , mealsFilters user.meals
     , table [ class "table table-striped" ]
         [ thead []
             [ tr [] 
@@ -143,6 +146,50 @@ mealsTable address user =
         , tbody [] (List.map renderRow user.meals)
         ]
     ]
+
+mealsFilters : List Meal -> Html
+mealsFilters meals =
+  div [ class "row" ]
+    [ div [ class "col-sm-3" ]
+        [ div [ class "form-group" ]
+          [ label [ class "control-label" ] [ text "Start Date" ]
+          , select [ class "form-control" ] (mealFiltersDateOptions meals)
+          ]
+        ]
+    , div [ class "col-sm-3" ]
+        [ div [ class "form-group" ]
+          [ label [ class "control-label" ] [ text "End Date" ]
+          , select [ class "form-control" ] (mealFiltersDateOptions meals)
+          ]
+        ]
+    , div [ class "col-sm-3" ]
+        [ div [ class "form-group" ]
+          [ label [ class "control-label" ] [ text "Start Time" ]
+          , select [ class "form-control" ] []
+          ]
+        ]
+    , div [ class "col-sm-3" ]
+        [ div [ class "form-group" ]
+          [ label [ class "control-label" ] [ text "End Time" ]
+          , select [ class "form-control" ] []
+          ]
+        ]
+    ]
+
+mealFiltersDateOptions : List Meal -> List Html
+mealFiltersDateOptions meals =
+  let
+    uniqueDates =
+      List.map
+        (.createdAt >> (*) 1000 >> toFloat >> Date.fromTime >> Date.Format.format "%b %e, %Y")
+        meals
+        |> Set.fromList
+        |> Set.toList
+  in
+    List.map
+      (\date -> option [ value date ] [ text date ])
+      ("" :: uniqueDates)
+
 
 renderRow {description,calories,createdAt} =
   tr []
