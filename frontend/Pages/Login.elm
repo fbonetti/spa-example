@@ -82,7 +82,7 @@ view address model =
                 ]
               , br [] []
               , p [ class "text-center" ]
-                  [ text "New to SPA App? "
+                  [ text "New to Example App? "
                   , a (Routes.clickTo (Routes.encode Routes.Register))
                       [ text "Click here to register" ]
                   ]

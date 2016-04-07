@@ -22,7 +22,7 @@ view address model =
     [ div [ class "navbar navbar-default navbar-static-top" ]
         [ div [ class "container" ]
             [ div [ class "navbar-header" ]
-              [ a [ class "navbar-brand", href "#" ] [ text "Example App" ]
+              [ a ([ class "navbar-brand" ] ++ clickTo (Routes.encode Login)) [ text "Example App" ]
               ]
             , div [ class "navbar-collapse collapse" ]
               [ ul [ class "nav navbar-nav" ]
