@@ -71,15 +71,36 @@ class SpaExampleApp < Sinatra::Base
           user.safe_attributes.to_json
         else
           status 403
-          { message: "You're not allowed to view this user" }
+          { error: "You're not allowed to view this user" }
         end
       else
         status 404
-        { message: 'User not found' }.to_json
+        { error: 'User not found' }.to_json
       end
     else
       status 401
-      { message: 'You need to be logged in to see this page' }.to_json
+      { error: 'You need to be logged in to see this page' }.to_json
+    end
+  end
+
+  post '/api/v1/meals' do
+    if logged_in?
+      user = User.find_by(id: @payload['user_id'])
+      if user
+        if current_user.id == user.id || user.admin?
+          meal = user.meals.create(@payload.slice('description', 'calories'))
+          meal.safe_attributes.to_json
+        else
+          status 403
+          { error: "You're not allowed to perform this action" }
+        end
+      else
+        status 404
+        { error: 'User not found' }.to_json
+      end
+    else
+      status 401
+      { error: 'You need to be logged in to perform this action' }.to_json
     end
   end
 

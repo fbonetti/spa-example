@@ -19,16 +19,8 @@ class User < ActiveRecord::Base
   end
 
   def safe_attributes
-    attrs = attributes.slice('first_name', 'last_name')
-    attrs['meals'] = meals.map do |meal|
-      {
-        'id' => meal.id,
-        'description' => meal.description,
-        'calories' => meal.calories,
-        'created_at' => meal.created_at.to_i
-      }
-    end
-
+    attrs = attributes.slice('id', 'first_name', 'last_name')
+    attrs['meals'] = meals.map(&:safe_attributes)
     attrs
   end
 end

@@ -1,4 +1,4 @@
-module Bootstrap.Form (textInput, passwordInput, selectInput) where
+module Bootstrap.Form (textInput, passwordInput, numberInput, selectInput) where
 
 import Html exposing (Html, div, label, input, span, text, select, option)
 import Html.Attributes exposing (class, type', value, selected)
@@ -8,6 +8,9 @@ import String
 
 textInput : Address a -> (String -> a) -> String -> String -> String -> Html
 textInput = genericInput "text"
+
+numberInput : Address a -> (String -> a) -> String -> String -> String -> Html
+numberInput = genericInput "number"
 
 passwordInput : Address a -> (String -> a) -> String -> String -> String -> Html
 passwordInput = genericInput "password"
