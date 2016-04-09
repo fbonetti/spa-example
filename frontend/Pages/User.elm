@@ -2,17 +2,17 @@ module Pages.User where
 
 import Effects exposing (Effects)
 import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option)
-import Html.Attributes exposing (class, type', value)
+import Html.Attributes exposing (class, type', value, selected)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing, onSubmitPreventDefault)
+import Util exposing (onInput, nothing, onSubmitPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Form
 import Bootstrap.Alert
 import Http.Extra exposing (..)
-import Date
+import Date exposing (Date)
 import Date.Format
 import String
 import Set
@@ -24,6 +24,10 @@ type alias Model =
   , error : Maybe String
   , description : String
   , calories : Int
+  , startDate : Int
+  , endDate : Int
+  , startHour : Int
+  , endHour : Int
   }
 
 type alias User =
@@ -41,7 +45,16 @@ type alias Meal =
   }
 
 init : Model
-init = Model Nothing Nothing "" 0
+init =
+  { user = Nothing
+  , error = Nothing
+  , description = ""
+  , calories = 0
+  , startDate = -1
+  , endDate = -1
+  , startHour = -1
+  , endHour = -1
+  }
 
 -- UPDATE
 
@@ -49,6 +62,10 @@ type Action
     = NoOp
     | SetDescription String
     | SetCalories Int
+    | SetStartDate Int
+    | SetEndDate Int
+    | SetStartHour Int
+    | SetEndHour Int
     | SubmitAddMeal
     | HandleUserResponse (Result (Error String) (Response User))
     | HandleAddMealResponse (Result (Error String) (Response Meal))
@@ -62,6 +79,14 @@ update action model =
       ({ model | description = description }, Effects.none)
     SetCalories calories ->
       ({ model | calories = calories }, Effects.none)
+    SetStartDate startDate ->
+      ({ model | startDate = startDate }, Effects.none)
+    SetEndDate endDate ->
+      ({ model | endDate = endDate }, Effects.none)
+    SetStartHour startHour ->
+      ({ model | startHour = startHour }, Effects.none)
+    SetEndHour endHour ->
+      ({ model | endHour = endHour }, Effects.none)
     SubmitAddMeal ->
       ( model
       , postMeal model
@@ -112,7 +137,7 @@ renderPage address model user =
     [ userStats user
     , addMeal address model user
     , hr [] []
-    , mealsTable address user
+    , mealsTable address model user.meals
     ]
 
 userStats : User -> Html
@@ -125,16 +150,41 @@ addMeal address model user =
     [ h3 [] [ text "Record Meal" ]
     , form [ onSubmitPreventDefault address SubmitAddMeal ]
         [ Bootstrap.Form.textInput address SetDescription "Description" model.description ""
-        , Bootstrap.Form.numberInput address (String.toInt >> Result.toMaybe >> Maybe.withDefault 0 >> SetCalories) "Calories" (toString model.calories) ""
+        , Bootstrap.Form.numberInput address (safeStrToInt >> SetCalories) "Calories" (if model.calories > 0 then toString model.calories else "") ""
         , button [ type' "submit", class "btn btn-primary" ] [ text "Record meal" ]
         ]
     ]
 
-mealsTable : Address Action -> User -> Html
-mealsTable address user =
+filterByStartDate : Model -> List Meal -> List Meal
+filterByStartDate {startDate} =
+  List.filter (\meal -> startDate == -1 || meal.createdAt >= startDate)
+
+filterByEndDate : Model -> List Meal -> List Meal
+filterByEndDate {endDate} =
+  List.filter (\meal -> endDate == -1 || meal.createdAt <= endDate)
+
+filterByStartHour : Model -> List Meal -> List Meal
+filterByStartHour {startHour} =
+  List.filter (\meal -> startHour == -1 || ((unixToDate >> Date.hour) meal.createdAt) >= startHour)
+
+filterByEndHour : Model -> List Meal -> List Meal
+filterByEndHour {endHour} =
+  List.filter (\meal -> endHour == -1 || ((unixToDate >> Date.hour) meal.createdAt) < endHour)
+
+filterMeals : Model -> List Meal -> List Meal
+filterMeals model meals =
+  meals
+    |> filterByStartDate model
+    |> filterByEndDate model
+    |> filterByStartHour model
+    |> filterByEndHour model
+
+
+mealsTable : Address Action -> Model -> List Meal -> Html
+mealsTable address model meals =
   div []
     [ h3 [] [ text "All Meals" ]
-    , mealsFilters user.meals
+    , mealsFilters address model meals
     , table [ class "table table-striped" ]
         [ thead []
             [ tr [] 
@@ -143,53 +193,79 @@ mealsTable address user =
               , th [] [ text "Calories" ]
               ]
             ]
-        , tbody [] (List.map renderRow user.meals)
+        , tbody [] (List.map renderRow (filterMeals model meals))
         ]
     ]
 
-mealsFilters : List Meal -> Html
-mealsFilters meals =
+mealsFilters : Address Action -> Model -> List Meal -> Html
+mealsFilters address model meals =
   div [ class "row" ]
     [ div [ class "col-sm-3" ]
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "Start Date" ]
-          , select [ class "form-control" ] (mealFiltersDateOptions meals)
+          , select
+              [ class "form-control", onChange address (safeStrToInt >> SetStartDate) ]
+              (mealFiltersDateOptions model.startDate meals)
           ]
         ]
     , div [ class "col-sm-3" ]
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "End Date" ]
-          , select [ class "form-control" ] (mealFiltersDateOptions meals)
+          , select
+              [ class "form-control", onChange address (safeStrToInt >> SetEndDate) ]
+              (mealFiltersDateOptions model.endDate meals)
           ]
         ]
     , div [ class "col-sm-3" ]
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "Start Time" ]
-          , select [ class "form-control" ] []
+          , select
+              [ class "form-control", onChange address (safeStrToInt >> SetStartHour) ]
+              (mealFiltersTimeOptions model.startHour)
           ]
         ]
     , div [ class "col-sm-3" ]
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "End Time" ]
-          , select [ class "form-control" ] []
+          , select
+              [ class "form-control", onChange address (safeStrToInt >> SetEndHour) ]
+              (mealFiltersTimeOptions model.endHour)
           ]
         ]
     ]
 
-mealFiltersDateOptions : List Meal -> List Html
-mealFiltersDateOptions meals =
+mealFiltersDateOptions : Int -> List Meal -> List Html
+mealFiltersDateOptions selectedDate meals =
   let
-    uniqueDates =
-      List.map
-        (.createdAt >> (*) 1000 >> toFloat >> Date.fromTime >> Date.Format.format "%b %e, %Y")
-        meals
-        |> Set.fromList
-        |> Set.toList
-  in
-    List.map
-      (\date -> option [ value date ] [ text date ])
-      ("" :: uniqueDates)
+    dates = List.map .createdAt meals
+    dateToFormattedString = ((*) 1000 >> toFloat >> Date.fromTime >> Date.Format.format "%b %e, %Y")
 
+    uniqueDates = uniqueBy dateToFormattedString dates
+    toOption date =
+      option
+        [ value (toString date), selected (date == selectedDate) ]
+        [ text (dateToFormattedString date) ]
+  in
+    (option [ value "-1" ] [ text "" ]) :: (List.map toOption uniqueDates)
+
+mealFiltersTimeOptions : Int -> List Html
+mealFiltersTimeOptions selectedVal =
+  let
+    indicator val =
+      if val >= 12 then "PM" else "AM"
+    valToString val =
+      if val == -1 then
+        ""
+      else if (val % 12) == 0 then
+        "12 " ++ (indicator val)
+      else
+        (toString (val % 12)) ++ " " ++ (indicator val)
+    buildOption val str =
+      option
+        [ value (toString val), selected (val == selectedVal) ]
+        [ text str ]
+  in
+    List.map2 buildOption [-1..23] (List.map valToString [-1..23])
 
 renderRow {description,calories,createdAt} =
   tr []
