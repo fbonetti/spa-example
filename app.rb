@@ -67,11 +67,35 @@ class SpaExampleApp < Sinatra::Base
     if logged_in?
       user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
       if user
-        if current_user.id == user.id || user.admin?
+        if current_user.id == user.id || user.user_manager? || user.admin?
           user.safe_attributes.to_json
         else
           status 403
           { error: "You're not allowed to view this user" }
+        end
+      else
+        status 404
+        { error: 'User not found' }.to_json
+      end
+    else
+      status 401
+      { error: 'You need to be logged in to see this page' }.to_json
+    end
+  end
+
+  patch '/api/v1/users/:id' do
+    if logged_in?
+      user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
+      if user
+        if current_user.id == user.id || user.user_manager? || user.admin?
+          if user.update(first_name: @payload['first_name'], last_name: @payload['last_name'])
+            user.safe_attributes.to_json
+          else
+            { error: user.errors.full_messages.join(', ') }.to_json
+          end
+        else
+          status 403
+          { error: "You're not allowed to modify this user" }
         end
       else
         status 404

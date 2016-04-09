@@ -1,8 +1,9 @@
 module Pages.User where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option)
+import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option, i, input)
 import Html.Attributes exposing (class, type', value, selected)
+import Html.Events exposing (onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
@@ -22,6 +23,9 @@ import Set
 type alias Model =
   { user : Maybe User
   , error : Maybe String
+  , firstName : String
+  , lastName : String
+  , editingUser : Bool
   , description : String
   , calories : Int
   , startDate : Int
@@ -48,6 +52,9 @@ init : Model
 init =
   { user = Nothing
   , error = Nothing
+  , firstName = ""
+  , lastName = ""
+  , editingUser = False
   , description = ""
   , calories = 0
   , startDate = -1
@@ -60,7 +67,10 @@ init =
 
 type Action
     = NoOp
+    | SetFirstName String
+    | SetLastName String
     | SetDescription String
+    | SetEditingUser Bool
     | SetCalories Int
     | SetStartDate Int
     | SetEndDate Int
@@ -69,12 +79,20 @@ type Action
     | SubmitAddMeal
     | HandleUserResponse (Result (Error String) (Response User))
     | HandleAddMealResponse (Result (Error String) (Response Meal))
+    | SubmitUserEdit
+    | HandleEditUserResponse (Result (Error String) (Response User))
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
       (model, Effects.none)
+    SetFirstName firstName ->
+      ({ model | firstName = firstName }, Effects.none)
+    SetLastName lastName ->
+      ({ model | lastName = lastName }, Effects.none)
+    SetEditingUser editingUser ->
+      ({ model | editingUser = editingUser }, Effects.none)
     SetDescription description ->
       ({ model | description = description }, Effects.none)
     SetCalories calories ->
@@ -88,19 +106,36 @@ update action model =
     SetEndHour endHour ->
       ({ model | endHour = endHour }, Effects.none)
     SubmitAddMeal ->
-      ( model
-      , postMeal model
-      )
+      (model, postMeal model)
+    SubmitUserEdit ->
+      (model, postUserEdit model)
     HandleUserResponse result ->
       case result of
         Ok response ->
-          ({ model | user = Just response.data}, Effects.none)
+          ({ model | user = Just response.data,
+              firstName = response.data.firstName,
+              lastName = response.data.lastName }
+          , Effects.none)
         Err error ->
           handleError error model
     HandleAddMealResponse result ->
       case result of
         Ok response ->
-          ({ model | user = appendMeal model.user response.data }, Effects.none)
+          ({ model | user = appendMeal model.user response.data }
+          , Effects.none
+          )
+        Err error ->
+          handleError error model
+    HandleEditUserResponse result ->
+      case result of
+        Ok response ->
+          ({ model |
+              user = Just response.data,
+              firstName = response.data.firstName,
+              lastName = response.data.lastName,
+              editingUser = False }
+          , Effects.none
+          )
         Err error ->
           handleError error model
 
@@ -134,15 +169,29 @@ view address model =
 
 renderPage address model user =
   div []
-    [ userStats user
+    [ (if model.editingUser then userStatsForm address model else userStats address user)
     , addMeal address model user
     , hr [] []
     , mealsTable address model user.meals
     ]
 
-userStats : User -> Html
-userStats user =
-  h2 [] [ text (user.firstName ++ " " ++ user.lastName ++ "'s Meals") ]
+userStats : Address Action -> User -> Html
+userStats address user =
+  div [ onClick address (SetEditingUser True) ]
+    [ h2 [  ]
+        [ i [ class "fa fa-pencil" ] []
+        , text " "
+        , text (user.firstName ++ " " ++ user.lastName ++ "'s Meals")
+        ]
+    ]
+
+userStatsForm : Address Action -> Model -> Html
+userStatsForm address {firstName,lastName} =
+  form [ onSubmitPreventDefault address SubmitUserEdit ]
+    [ input [ type' "text", value firstName, onChange address SetFirstName ] []
+    , input [ type' "text", value lastName, onChange address SetLastName ] []
+    , button [ type' "submit" ] [ text "save" ]
+    ]
 
 addMeal : Address Action -> Model -> User -> Html
 addMeal address model user =
@@ -285,7 +334,7 @@ fetchUser id =
   get ("/api/v1/users/" ++ toString id)
     |> withHeader "Content-Type" "application/json"
     |> withCredentials
-    |> send (jsonReader userSuccessDecoder) (jsonReader errorDecoder)
+    |> send (jsonReader userDecoder) (jsonReader errorDecoder)
     |> Task.toResult
     |> Task.map HandleUserResponse
     |> Effects.task
@@ -314,8 +363,22 @@ postMeal {user, description, calories} =
       |> Task.map HandleAddMealResponse
       |> Effects.task
 
-userSuccessDecoder : Json.Decode.Decoder User
-userSuccessDecoder = userDecoder
+postUserEdit : Model -> Effects Action
+postUserEdit {firstName, lastName, user} =
+  let
+    json = Json.Encode.object
+      [ ("first_name", Json.Encode.string firstName)
+      , ("last_name", Json.Encode.string lastName)
+      ]
+  in
+    patch ("/api/v1/users/" ++ (getUserId >> toString) user)
+      |> withHeader "Content-Type" "application/json"
+      |> withCredentials
+      |> withJsonBody json
+      |> send (jsonReader userDecoder) (jsonReader errorDecoder)
+      |> Task.toResult
+      |> Task.map HandleEditUserResponse
+      |> Effects.task
 
 userDecoder : Json.Decode.Decoder User
 userDecoder =
