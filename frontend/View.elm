@@ -11,6 +11,8 @@ import TransitRouter exposing (getTransition)
 
 import Model exposing (..)
 import Routes exposing (..)
+
+import Bootstrap.Alert
 import Pages.Login
 import Pages.Register
 import Pages.User
@@ -51,7 +53,7 @@ view address model =
               Page _ ->
                 text <| "This is page " ++ toString model.page
               EmptyRoute ->
-                text <| ""
+                Bootstrap.Alert.static "danger" "404: Page Not Found"
           ]
       ]
     ]
