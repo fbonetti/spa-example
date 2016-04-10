@@ -5,11 +5,14 @@ require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/activerecord'
 require 'dotenv'
+require 'sinatra'
 
 Dir.glob('./models/*.rb').each { |r| require r}
 
 class SpaExampleApp < Sinatra::Base
   register Sinatra::ActiveRecordExtension
+
+  set :server, :puma
 
   use Rack::Session::Cookie, expire_after: 604800, secret: ENV['SESSION_SECRET']
 

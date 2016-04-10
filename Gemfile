@@ -7,6 +7,7 @@ gem 'rake', '~> 11.1.2'
 gem 'bcrypt', '~> 3.1.11'
 gem 'dotenv', '~> 2.1.1'
 gem 'uglifier', '~> 3.0.0'
+gem 'puma', '~> 3.4.0'
 
 group :development do
   gem 'rerun'
