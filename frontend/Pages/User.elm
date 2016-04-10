@@ -7,13 +7,14 @@ import Html.Events exposing (onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing, onSubmitPreventDefault, onClickPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt)
+import Util exposing (onInput, nothing, onSubmitPreventDefault, onClickPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt, dateFormat)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Form
 import Bootstrap.Alert
 import Http.Extra exposing (..)
 import Date exposing (Date)
+import Date.Config
 import Date.Format
 import String
 
@@ -346,7 +347,7 @@ mealFiltersDateOptions : Int -> List Meal -> List Html
 mealFiltersDateOptions selectedDate meals =
   let
     dates = List.map .createdAt meals
-    dateToFormattedString = ((*) 1000 >> toFloat >> Date.fromTime >> Date.Format.format "%b %e, %Y")
+    dateToFormattedString = ((*) 1000 >> toFloat >> Date.fromTime >> dateFormat "%b %e, %Y")
 
     uniqueDates = uniqueBy dateToFormattedString dates
     toOption date =
@@ -388,7 +389,7 @@ renderRow address {id,description,calories,createdAt} =
 
 formatTimestamp : Int -> String
 formatTimestamp =
-  toFloat >> (*) 1000 >> Date.fromTime >> Date.Format.format "%b %e, %Y at %l:%M %P"
+  toFloat >> (*) 1000 >> Date.fromTime >> dateFormat "%b %e, %Y at %l:%M %P"
 
 -- TASKS AND HELPERS
 

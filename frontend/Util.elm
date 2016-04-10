@@ -6,6 +6,8 @@ import Json.Decode
 import Dict
 import Date exposing (Date)
 import String
+import Date.Config.Configs
+import Date.Format
 
 onInput : Signal.Address a -> (String -> a) -> Attribute
 onInput address contentToValue =
@@ -53,3 +55,7 @@ uniqueBy f =
         (Dict.fromList [])
   in
     createDict >> Dict.values
+
+dateFormat : String -> Date -> String
+dateFormat =
+  Date.Format.format (Date.Config.Configs.getConfig "en_us")
