@@ -82,7 +82,7 @@ mountRoute prevRoute route model =
   case route of
 
     Home ->
-      (model, Effects.none)
+      (model, Effects.map (always NoOp) (Routes.redirect Routes.Login))
 
     Login ->
       (model, Effects.none)
@@ -94,10 +94,14 @@ mountRoute prevRoute route model =
       (model, Effects.none)
 
     User id ->
-      ({ model | userModel = Pages.User.init model.currentTime }, Effects.map UserPageAction (Pages.User.fetchUser id))
+      ({ model | userModel = Pages.User.init model.currentTime }
+      , Effects.map UserPageAction (Pages.User.fetchUser id)
+      )
 
     Users ->
-      (model, Effects.map UsersPageAction Pages.Users.fetchUsers)
+      ({ model | usersModel = Pages.Users.init }
+      , Effects.map UsersPageAction Pages.Users.fetchUsers
+      )
 
     EmptyRoute ->
       (model, Effects.none)
