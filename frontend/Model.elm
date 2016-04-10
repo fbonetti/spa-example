@@ -5,6 +5,7 @@ import Routes exposing (Route)
 import Pages.Login
 import Pages.Register
 import Pages.User
+import Pages.Users
 
 
 type alias Model = WithRoute Route
@@ -12,6 +13,7 @@ type alias Model = WithRoute Route
   , loginModel : Pages.Login.Model
   , registerModel : Pages.Register.Model
   , userModel : Pages.User.Model
+  , usersModel : Pages.Users.Model
   }
 
 
@@ -20,4 +22,5 @@ type Action
     | LoginPageAction Pages.Login.Action
     | RegisterPageAction Pages.Register.Action
     | UserPageAction Pages.User.Action
+    | UsersPageAction Pages.Users.Action
     | RouterAction (TransitRouter.Action Route)

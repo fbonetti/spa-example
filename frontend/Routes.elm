@@ -15,7 +15,7 @@ type Route
   | Login
   | Register
   | User Int
-  | Page Int
+  | Users
   | EmptyRoute
 
 
@@ -25,7 +25,7 @@ routeParsers =
   , static Login "/login"
   , static Register "/register"
   , dyn1 User "/users/" int "" 
-  , dyn1 Page "/page/" int ""
+  , static Users "/users"
   ]
 
 
@@ -42,7 +42,7 @@ encode route =
     Login -> "/login"
     Register -> "/register"
     User id -> "/users/" ++ toString id
-    Page i -> "/page/" ++ toString i
+    Users -> "/users"
     EmptyRoute -> ""
 
 redirect : Route -> Effects ()

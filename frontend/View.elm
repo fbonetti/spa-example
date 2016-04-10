@@ -16,6 +16,7 @@ import Bootstrap.Alert
 import Pages.Login
 import Pages.Register
 import Pages.User
+import Pages.Users
 
 
 view : Address Action -> Model -> Html
@@ -32,6 +33,8 @@ view address model =
                       [ a (clickTo <| Routes.encode Login) [ text "Login" ] ]
                   , li [ headerLinkClass model Register ]
                       [ a (clickTo <| Routes.encode Register) [ text "Register" ] ]
+                  , li [ headerLinkClass model Users ]
+                      [ a (clickTo <| Routes.encode Users) [ text "Users" ] ]
                   ] 
               ]
             ]
@@ -50,8 +53,8 @@ view address model =
                 Pages.Register.view (Signal.forwardTo address RegisterPageAction) model.registerModel
               User _ ->
                 Pages.User.view (Signal.forwardTo address UserPageAction) model.userModel
-              Page _ ->
-                text <| "This is page " ++ toString model.page
+              Users ->
+                Pages.Users.view (Signal.forwardTo address UsersPageAction) model.usersModel
               EmptyRoute ->
                 Bootstrap.Alert.static "danger" "404: Page Not Found"
           ]

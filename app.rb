@@ -56,22 +56,36 @@ class SpaExampleApp < Sinatra::Base
 
   post '/api/v1/logout' do
     session.clear
-    { message: 'You successfully logged out' }
+    { message: 'You successfully logged out' }.to_json
   end
 
   get '/api/v1/users' do
+    if !logged_in?
+      status 401
+      return { error: 'You need to be logged in to see this page' }.to_json
+    end
 
+    if !(current_user.user_manager? || current_user.admin?)
+      status 403
+      return { error: "You must be a User Manager or an Admin to view this page" }.to_json
+    end
+
+    User.select("users.*, COUNT(*) as meal_count")
+      .joins("LEFT JOIN meals ON meals.user_id = users.id")
+      .group("users.id")
+      .order("users.id")
+      .map { |u| u.attributes.slice('id', 'first_name', 'last_name', 'meal_count') }.to_json
   end
 
   get '/api/v1/users/:id' do
     if logged_in?
       user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
       if user
-        if current_user.id == user.id || user.user_manager? || user.admin?
+        if current_user.id == user.id || current_user.user_manager? || current_user.admin?
           user.safe_attributes.to_json
         else
           status 403
-          { error: "You're not allowed to view this user" }
+          { error: "You're not allowed to view this user" }.to_json
         end
       else
         status 404
@@ -87,7 +101,7 @@ class SpaExampleApp < Sinatra::Base
     if logged_in?
       user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
       if user
-        if current_user.id == user.id || user.user_manager? || user.admin?
+        if current_user.id == user.id || current_user.user_manager? || current_user.admin?
           if user.update(first_name: @payload['first_name'], last_name: @payload['last_name'])
             user.safe_attributes.to_json
           else
@@ -95,7 +109,7 @@ class SpaExampleApp < Sinatra::Base
           end
         else
           status 403
-          { error: "You're not allowed to modify this user" }
+          { error: "You're not allowed to modify this user" }.to_json
         end
       else
         status 404
@@ -111,12 +125,12 @@ class SpaExampleApp < Sinatra::Base
     if logged_in?
       user = User.find_by(id: @payload['user_id'])
       if user
-        if current_user.id == user.id || user.admin?
+        if current_user.id == user.id || current_user.admin?
           meal = user.meals.create(@payload.slice('description', 'calories'))
           meal.safe_attributes.to_json
         else
           status 403
-          { error: "You're not allowed to perform this action" }
+          { error: "You're not allowed to perform this action" }.to_json
         end
       else
         status 404
