@@ -77,7 +77,7 @@ class SpaExampleApp < Sinatra::Base
       .joins("LEFT JOIN meals ON meals.user_id = users.id")
       .group("users.id")
       .order("users.id")
-      .map { |u| u.attributes.slice('id', 'first_name', 'last_name', 'type', 'meal_count') }.to_json
+      .map { |u| u.attributes.slice('id', 'first_name', 'last_name', 'email', 'type', 'meal_count') }.to_json
   end
 
   get '/api/v1/users/:id' do
