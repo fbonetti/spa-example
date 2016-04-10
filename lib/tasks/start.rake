@@ -10,7 +10,7 @@ namespace :start do
   end
 
   task :prod do
-    Rake::Task["elm:build"].invoke
+    Rake::Task["elm:build_prod"].invoke
     sh("rackup")
   end
 end
