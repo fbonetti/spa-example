@@ -11,6 +11,6 @@ namespace :start do
 
   task :prod do
     Rake::Task["elm:build_prod"].invoke
-    sh("rackup -o 0.0.0.0 -p 80")
+    sh("rbenv sudo RACK_ENV=production rackup -o 0.0.0.0 -p 80 &")
   end
 end
