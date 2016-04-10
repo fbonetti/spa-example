@@ -46,16 +46,6 @@ unixToDate : Int -> Date
 unixToDate =
   (*) 1000 >> toFloat >> Date.fromTime
 
-uniqueBy : (a -> comparable) -> List a -> List a
-uniqueBy f =
-  let
-    createDict = 
-      List.foldl
-        (\val dict -> Dict.insert (f val) val dict)
-        (Dict.fromList [])
-  in
-    createDict >> Dict.values
-
 dateFormat : String -> Date -> String
 dateFormat =
   Date.Format.format (Date.Config.Configs.getConfig "en_us")

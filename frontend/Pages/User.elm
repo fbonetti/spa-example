@@ -7,7 +7,7 @@ import Html.Events exposing (onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing, onSubmitPreventDefault, onClickPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt, dateFormat)
+import Util exposing (onInput, nothing, onSubmitPreventDefault, onClickPreventDefault, onChange, unixToDate, safeStrToInt, dateFormat)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Form
@@ -15,7 +15,10 @@ import Bootstrap.Alert
 import Http.Extra exposing (..)
 import Date exposing (Date)
 import Date.Format
+import Date.Field
+import Date.Compare
 import String
+import Set
 
 -- MODEL
 
@@ -29,8 +32,8 @@ type alias Model =
   , editingUser : Bool
   , description : String
   , calories : Int
-  , startDate : Int
-  , endDate : Int
+  , startDate : String
+  , endDate : String
   , startHour : Int
   , endHour : Int
   }
@@ -61,8 +64,8 @@ init currentTime =
   , editingUser = False
   , description = ""
   , calories = 0
-  , startDate = -1
-  , endDate = -1
+  , startDate = ""
+  , endDate = ""
   , startHour = -1
   , endHour = -1
   }
@@ -95,8 +98,8 @@ type Action
     | SetDescription String
     | SetEditingUser Bool
     | SetCalories Int
-    | SetStartDate Int
-    | SetEndDate Int
+    | SetStartDate String
+    | SetEndDate String
     | SetStartHour Int
     | SetEndHour Int
     | SubmitAddMeal
@@ -284,12 +287,44 @@ addMeal address model user =
       ]
 
 filterByStartDate : Model -> List Meal -> List Meal
-filterByStartDate {startDate} =
-  List.filter (\meal -> startDate == -1 || meal.createdAt >= startDate)
+filterByStartDate model meals =
+  if model.startDate == "" then
+    meals
+  else
+    let
+      mealDate = .createdAt >> unixToDate
+      startHour = if model.startHour == -1 then 0 else model.startHour
+      startMinute = 0
+      startDate =
+        Date.fromString model.startDate
+          |> Result.toMaybe
+          |> Maybe.withDefault (Date.fromTime 0)
+          |> Date.Field.fieldToDateClamp (Date.Field.Hour startHour)
+          |> Date.Field.fieldToDateClamp (Date.Field.Minute startMinute)
+      predicate meal =
+        Date.Compare.is Date.Compare.SameOrAfter (mealDate meal) startDate
+    in
+      List.filter predicate meals
 
 filterByEndDate : Model -> List Meal -> List Meal
-filterByEndDate {endDate} =
-  List.filter (\meal -> endDate == -1 || meal.createdAt <= endDate)
+filterByEndDate model meals =
+  if model.endDate == "" then
+    meals
+  else
+    let
+      mealDate = .createdAt >> unixToDate
+      endHour = if model.endHour == -1 then 23 else model.endHour
+      endMinute = if model.endHour == -1 then 59 else 0
+      endDate =
+        Date.fromString model.endDate
+          |> Result.toMaybe
+          |> Maybe.withDefault (Date.fromTime 0)
+          |> Date.Field.fieldToDateClamp (Date.Field.Hour endHour)
+          |> Date.Field.fieldToDateClamp (Date.Field.Minute endMinute)
+      predicate meal =
+        Date.Compare.is Date.Compare.SameOrBefore (mealDate meal) endDate
+    in
+      List.filter predicate meals
 
 filterByStartHour : Model -> List Meal -> List Meal
 filterByStartHour {startHour} =
@@ -333,7 +368,7 @@ mealsFilters address model meals =
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "Start Date" ]
           , select
-              [ class "form-control", onChange address (safeStrToInt >> SetStartDate) ]
+              [ class "form-control", onChange address SetStartDate ]
               (mealFiltersDateOptions model.startDate meals)
           ]
         ]
@@ -341,7 +376,7 @@ mealsFilters address model meals =
         [ div [ class "form-group" ]
           [ label [ class "control-label" ] [ text "End Date" ]
           , select
-              [ class "form-control", onChange address (safeStrToInt >> SetEndDate) ]
+              [ class "form-control", onChange address SetEndDate ]
               (mealFiltersDateOptions model.endDate meals)
           ]
         ]
@@ -363,19 +398,19 @@ mealsFilters address model meals =
         ]
     ]
 
-mealFiltersDateOptions : Int -> List Meal -> List Html
+mealFiltersDateOptions : String -> List Meal -> List Html
 mealFiltersDateOptions selectedDate meals =
   let
-    dates = List.map .createdAt meals
-    dateToFormattedString = ((*) 1000 >> toFloat >> Date.fromTime >> dateFormat "%b %e, %Y")
-
-    uniqueDates = uniqueBy dateToFormattedString dates
-    toOption date =
+    uniqueDates =
+      List.map (.createdAt >> unixToDate >> dateFormat "%b %e, %Y") meals
+        |> Set.fromList
+        |> Set.toList
+    toOption dateStr =
       option
-        [ value (toString date), selected (date == selectedDate) ]
-        [ text (dateToFormattedString date) ]
+        [ value dateStr, selected (selectedDate == dateStr) ]
+        [ text dateStr ]
   in
-    (option [ value "-1" ] [ text "" ]) :: (List.map toOption uniqueDates)
+    List.map toOption ("" :: uniqueDates)
 
 mealFiltersTimeOptions : Int -> List Html
 mealFiltersTimeOptions selectedVal =
