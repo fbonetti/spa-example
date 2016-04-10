@@ -16,7 +16,6 @@ import Http.Extra exposing (..)
 import Date exposing (Date)
 import Date.Format
 import String
-import Set
 
 -- MODEL
 
@@ -63,6 +62,10 @@ init =
   , endHour = -1
   }
 
+newMealValid : Model -> Bool
+newMealValid {description,calories} =
+  String.length description > 0 && calories > 0
+
 -- UPDATE
 
 type Action
@@ -106,7 +109,10 @@ update action model =
     SetEndHour endHour ->
       ({ model | endHour = endHour }, Effects.none)
     SubmitAddMeal ->
-      (model, postMeal model)
+      if newMealValid model then
+        (model, postMeal model)
+      else
+        (model, Effects.none)
     SubmitUserEdit ->
       (model, postUserEdit model)
     HandleUserResponse result ->
@@ -114,14 +120,15 @@ update action model =
         Ok response ->
           ({ model | user = Just response.data,
               firstName = response.data.firstName,
-              lastName = response.data.lastName }
+              lastName = response.data.lastName,
+              error = Nothing }
           , Effects.none)
         Err error ->
           handleError error model
     HandleAddMealResponse result ->
       case result of
         Ok response ->
-          ({ model | user = appendMeal model.user response.data }
+          ({ model | user = appendMeal response.data model.user, error = Nothing }
           , Effects.none
           )
         Err error ->
@@ -133,27 +140,28 @@ update action model =
               user = Just response.data,
               firstName = response.data.firstName,
               lastName = response.data.lastName,
-              editingUser = False }
+              editingUser = False,
+              error = Nothing }
           , Effects.none
           )
         Err error ->
           handleError error model
 
-appendMeal user meal =
+appendMeal : Meal -> Maybe User -> Maybe User
+appendMeal meal user =
   case user of
     Just u ->
       Just { u | meals = meal :: u.meals }
     Nothing -> Nothing
 
+handleError : Error String -> Model -> (Model, Effects Action)
 handleError error model =
   case error of
     BadResponse response ->
       if response.status == 401 then
         (model, Effects.map (always NoOp) (Routes.redirect Routes.Login))
-      else if response.status == 404 || response.status == 403 then
-        ({ model | error = Just response.data }, Effects.none)
       else
-        ({ model | error = Just "Something went wrong"}, Effects.none)
+        ({ model | error = Just response.data }, Effects.none)
     _ ->
       ({ model | error = Just "Something went wrong"}, Effects.none)
 
@@ -165,11 +173,20 @@ view address model =
     Just user ->
       renderPage address model user
     Nothing ->
-      Bootstrap.Alert.static "danger" (model.error |> Maybe.withDefault "Something went wrong")
+      renderError (model.error |> Maybe.withDefault "Something went wrong")
+      
 
+renderError : String -> Html
+renderError errorMessage =
+  Bootstrap.Alert.static "danger" errorMessage
+
+renderPage : Address Action -> Model -> User -> Html
 renderPage address model user =
   div []
-    [ (if model.editingUser then userStatsForm address model else userStats address user)
+    [ case model.error of
+        Just errorMessage -> renderError errorMessage
+        Nothing -> nothing
+    , (if model.editingUser then userStatsForm address model else userStats address user)
     , addMeal address model user
     , hr [] []
     , mealsTable address model user.meals
@@ -195,14 +212,22 @@ userStatsForm address {firstName,lastName} =
 
 addMeal : Address Action -> Model -> User -> Html
 addMeal address model user =
-  div []
-    [ h3 [] [ text "Record Meal" ]
-    , form [ onSubmitPreventDefault address SubmitAddMeal ]
-        [ Bootstrap.Form.textInput address SetDescription "Description" model.description ""
-        , Bootstrap.Form.numberInput address (safeStrToInt >> SetCalories) "Calories" (if model.calories > 0 then toString model.calories else "") ""
-        , button [ type' "submit", class "btn btn-primary" ] [ text "Record meal" ]
-        ]
-    ]
+  let
+    btnClass =
+      if newMealValid model then
+        "btn btn-primary"
+      else
+        "btn btn-primary disabled"
+
+  in
+    div []
+      [ h3 [] [ text "Record Meal" ]
+      , form [ onSubmitPreventDefault address SubmitAddMeal ]
+          [ Bootstrap.Form.textInput address SetDescription "Description" model.description ""
+          , Bootstrap.Form.numberInput address (safeStrToInt >> SetCalories) "Calories" (if model.calories > 0 then toString model.calories else "") ""
+          , button [ type' "submit", class btnClass ] [ text "Record meal" ]
+          ]
+      ]
 
 filterByStartDate : Model -> List Meal -> List Meal
 filterByStartDate {startDate} =
@@ -316,6 +341,7 @@ mealFiltersTimeOptions selectedVal =
   in
     List.map2 buildOption [-1..23] (List.map valToString [-1..23])
 
+renderRow : Meal -> Html
 renderRow {description,calories,createdAt} =
   tr []
     [ td [] [ (formatTimestamp >> text) createdAt ]

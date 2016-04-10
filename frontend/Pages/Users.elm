@@ -1,7 +1,7 @@
 module Pages.Users where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, text, table, thead, tbody, th, tr, td, a)
+import Html exposing (Html, div, text, table, thead, tbody, th, tr, td, a, h2)
 import Html.Attributes exposing (class)
 import Routes exposing (clickTo, encode)
 import Signal exposing (Address)
@@ -66,13 +66,14 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div []
     [ errorAlert address model.error
+    , h2 [] [ text "All users" ]
     , table [ class "table table-striped" ]
       [ thead []
           [ tr []
-              [ td [] [ text "Id" ]
-              , td [] [ text "First Name" ]
-              , td [] [ text "Last Name" ]
-              , td [] [ text "# of Recorded Meals" ]
+              [ th [] [ text "Id" ]
+              , th [] [ text "First Name" ]
+              , th [] [ text "Last Name" ]
+              , th [] [ text "# of Recorded Meals" ]
               ]
           ]
       , tbody [] (List.map renderRow model.users)
