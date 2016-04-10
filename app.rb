@@ -38,7 +38,7 @@ class SpaExampleApp < Sinatra::Base
 
     if user.save
       session[:user_id] = user.id
-      { message: 'Success' }.to_json
+      { user_id: user.id }.to_json
     else
       status 400
       { error: user.errors.full_messages.join(', ') }.to_json

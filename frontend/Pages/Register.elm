@@ -103,7 +103,7 @@ type Action
     | SetPasswordConfirmation String
     | SetAccountType String
     | AttemptRegister
-    | HandleRegisterResponse (Result (Error String) (Response String))
+    | HandleRegisterResponse (Result (Error String) (Response Int))
     | ClearError
 
 update : Action -> Model -> (Model, Effects Action)
@@ -132,7 +132,7 @@ update action model =
       case result of
         Ok response -> 
           ( { model | error = Nothing }
-          , Effects.map (always NoOp) (Routes.redirect Routes.Home)
+          , Effects.map (always NoOp) (Routes.redirect (Routes.User response.data))
           )
         Err error ->
           ( { model | error = Just (displayError error) }
@@ -159,7 +159,7 @@ view address model =
                 , Bootstrap.Form.passwordInput address SetPassword "Password" model.password (passwordErrorMessage model)
                 , Bootstrap.Form.passwordInput address SetPasswordConfirmation "Password Confirmation" model.passwordConfirmation (passwordConfirmationErrorMessage model)
                 , Bootstrap.Form.selectInput address SetAccountType accountTypeOptions "Account Type" model.accountType (accountTypeErrorMessage model)
-                , input [ submitBtnClass model, type' "submit", value "Login", onClick address AttemptRegister ] []
+                , input [ submitBtnClass model, type' "submit", value "Login" ] []
                 ]
               , br [] []
               , p [ class "text-center" ]
@@ -174,9 +174,9 @@ view address model =
 
 accountTypeOptions : List (String,String)
 accountTypeOptions =
-  [ ("Regular User", "regular_user")
-  , ("User Manager", "user_manager")
-  , ("Admin", "admin")
+  [ ("Regular User", "RegularUser")
+  , ("User Manager", "UserManager")
+  , ("Admin", "Admin")
   ]
 
 submitBtnClass model =
@@ -196,12 +196,13 @@ errorAlert address error =
 -- TASKS AND HELPERS
 
 postRegister : Model -> Effects Action
-postRegister {firstName,lastName,email,password,passwordConfirmation} =
+postRegister {firstName,lastName,email,accountType,password,passwordConfirmation} =
   let
     json = Json.Encode.object
       [ ("first_name", Json.Encode.string firstName)
       , ("last_name", Json.Encode.string lastName)
       , ("email", Json.Encode.string email)
+      , ("type", Json.Encode.string accountType)
       , ("password", Json.Encode.string password)
       , ("password_confirmation", Json.Encode.string passwordConfirmation)
       ]
@@ -221,14 +222,10 @@ displayError error =
     BadResponse response -> response.data
     _ -> "Something went wrong"
 
-successDecoder : Json.Decode.Decoder String
+successDecoder : Json.Decode.Decoder Int
 successDecoder =
-  Json.Decode.object1
-    identity
-    ("message" := Json.Decode.string)
+  ("user_id" := Json.Decode.int)
 
 errorDecoder : Json.Decode.Decoder String
 errorDecoder =
-  Json.Decode.object1
-    identity
-    ("error" := Json.Decode.string)
+  ("error" := Json.Decode.string)
