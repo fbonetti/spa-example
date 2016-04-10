@@ -142,6 +142,26 @@ class SpaExampleApp < Sinatra::Base
     end
   end
 
+  delete '/api/v1/meals/:id' do
+    if logged_in?
+      meal = Meal.find_by(id: params['id'])
+      if meal
+        if current_user.id == meal.user_id || current_user.admin?
+          { meal_id: meal.id }.to_json
+        else
+          status 403
+          { error: "You're not allowed to perform this action" }.to_json
+        end
+      else
+        status 404
+        { error: 'Meal not found' }.to_json
+      end
+    else
+      status 401
+      { error: 'You need to be logged in to perform this action' }.to_json
+    end
+  end
+
   # Route all non data requests to the frontend app
 
   get '/*' do

@@ -15,10 +15,18 @@ onChange : Signal.Address a -> (String -> a) -> Attribute
 onChange address contentToValue =
   on "change" targetValue (\str -> Signal.message address (contentToValue str))
 
+onClickPreventDefault : Signal.Address a -> a -> Attribute
+onClickPreventDefault =
+  onPreventDefault "click"
+
 onSubmitPreventDefault : Signal.Address a -> a -> Attribute
-onSubmitPreventDefault address action =
+onSubmitPreventDefault =
+  onPreventDefault "submit"
+
+onPreventDefault : String -> Signal.Address a -> a -> Attribute
+onPreventDefault event address action =
   onWithOptions
-    "submit"
+    event
     { stopPropagation = True, preventDefault = True }
     Json.Decode.value
     (\_ -> Signal.message address action)

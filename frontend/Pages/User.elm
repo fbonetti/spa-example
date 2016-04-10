@@ -1,13 +1,13 @@
 module Pages.User where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option, i, input)
-import Html.Attributes exposing (class, type', value, selected)
+import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option, i, input, a)
+import Html.Attributes exposing (class, type', value, selected, href)
 import Html.Events exposing (onClick)
 import Routes
 import Signal exposing (Address)
 import Task exposing (Task)
-import Util exposing (onInput, nothing, onSubmitPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt)
+import Util exposing (onInput, nothing, onSubmitPreventDefault, onClickPreventDefault, uniqueBy, onChange, unixToDate, safeStrToInt)
 import Json.Encode exposing (Value)
 import Json.Decode exposing ((:=))
 import Bootstrap.Form
@@ -84,6 +84,8 @@ type Action
     | HandleAddMealResponse (Result (Error String) (Response Meal))
     | SubmitUserEdit
     | HandleEditUserResponse (Result (Error String) (Response User))
+    | DeleteMeal Int
+    | HandleDeleteMealResponse (Result (Error String) (Response Int))
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -128,7 +130,11 @@ update action model =
     HandleAddMealResponse result ->
       case result of
         Ok response ->
-          ({ model | user = appendMeal response.data model.user, error = Nothing }
+          ({ model |
+              user = appendMeal response.data model.user,
+              description = "",
+              calories = 0,
+              error = Nothing }
           , Effects.none
           )
         Err error ->
@@ -146,12 +152,29 @@ update action model =
           )
         Err error ->
           handleError error model
+    DeleteMeal mealId ->
+      (model, deleteMeal mealId)
+    HandleDeleteMealResponse result ->
+      case result of
+        Ok response ->
+          ({ model | user = removeMeal response.data model.user }
+          , Effects.none
+          )
+        Err error ->
+          handleError error model
 
 appendMeal : Meal -> Maybe User -> Maybe User
 appendMeal meal user =
   case user of
     Just u ->
       Just { u | meals = meal :: u.meals }
+    Nothing -> Nothing
+
+removeMeal : Int -> Maybe User -> Maybe User
+removeMeal mealId user =
+  case user of
+    Just u ->
+      Just { u | meals = List.filter (\meal -> meal.id /= mealId) u.meals }
     Nothing -> Nothing
 
 handleError : Error String -> Model -> (Model, Effects Action)
@@ -265,9 +288,10 @@ mealsTable address model meals =
               [ th [] [ text "Recorded At" ]
               , th [] [ text "Description" ]
               , th [] [ text "Calories" ]
+              , th [] [ text "" ]
               ]
             ]
-        , tbody [] (List.map renderRow (filterMeals model meals))
+        , tbody [] (List.map (renderRow address) (filterMeals model meals))
         ]
     ]
 
@@ -341,12 +365,15 @@ mealFiltersTimeOptions selectedVal =
   in
     List.map2 buildOption [-1..23] (List.map valToString [-1..23])
 
-renderRow : Meal -> Html
-renderRow {description,calories,createdAt} =
+renderRow : Address Action -> Meal -> Html
+renderRow address {id,description,calories,createdAt} =
   tr []
     [ td [] [ (formatTimestamp >> text) createdAt ]
     , td [] [ text description ]
     , td [] [ (toString >> text) calories ]
+    , td []
+        [ a [ href "#", onClickPreventDefault address (DeleteMeal id) ] [ text "Delete" ]
+        ]
     ]
 
 formatTimestamp : Int -> String
@@ -406,6 +433,16 @@ postUserEdit {firstName, lastName, user} =
       |> Task.map HandleEditUserResponse
       |> Effects.task
 
+deleteMeal : Int -> Effects Action
+deleteMeal mealId =
+  delete ("/api/v1/meals/" ++ (toString mealId))
+    |> withHeader "Content-Type" "application/json"
+    |> withCredentials
+    |> send (jsonReader ("meal_id" := Json.Decode.int)) (jsonReader errorDecoder)
+    |> Task.toResult
+    |> Task.map HandleDeleteMealResponse
+    |> Effects.task
+
 userDecoder : Json.Decode.Decoder User
 userDecoder =
   Json.Decode.object4
@@ -426,6 +463,4 @@ mealDecoder =
 
 errorDecoder : Json.Decode.Decoder String
 errorDecoder =
-  Json.Decode.object1
-    identity
-    ("error" := Json.Decode.string)
+  ("error" := Json.Decode.string)
