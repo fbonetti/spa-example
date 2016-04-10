@@ -1,5 +1,6 @@
 /frontend/elm-stuff/
 /frontend/build
 /public/elm.js
+/log
 .bundle
 .env

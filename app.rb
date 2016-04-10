@@ -13,6 +13,7 @@ class SpaExampleApp < Sinatra::Base
   register Sinatra::ActiveRecordExtension
 
   set :server, :puma
+  set :logging, true
 
   use Rack::Session::Cookie, expire_after: 604800, secret: ENV['SESSION_SECRET']
 
