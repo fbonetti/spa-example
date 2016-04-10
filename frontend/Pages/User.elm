@@ -1,7 +1,7 @@
 module Pages.User where
 
 import Effects exposing (Effects)
-import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, label, select, option, i, input, a)
+import Html exposing (Html, div, table, thead, tbody, th, tr, td, text, h3, hr, h2, button, form, span, label, select, option, i, input, a)
 import Html.Attributes exposing (class, type', value, selected, href)
 import Html.Events exposing (onClick)
 import Routes
@@ -88,6 +88,13 @@ todaysCalories : Date -> List Meal -> Int
 todaysCalories currentTime =
   todaysMeals currentTime >> List.map .calories >> List.sum
 
+anyFilters : Model -> Bool
+anyFilters {startDate,endDate,startHour,endHour} =
+  String.length startDate > 0 ||
+  String.length endDate > 0 ||
+  startHour > -1 ||
+  endHour > -1
+
 -- UPDATE
 
 type Action
@@ -102,6 +109,7 @@ type Action
     | SetEndDate String
     | SetStartHour Int
     | SetEndHour Int
+    | ClearFilters
     | SubmitAddMeal
     | HandleUserResponse (Result (Error String) (Response User))
     | HandleAddMealResponse (Result (Error String) (Response Meal))
@@ -135,6 +143,9 @@ update action model =
       ({ model | startHour = startHour }, Effects.none)
     SetEndHour endHour ->
       ({ model | endHour = endHour }, Effects.none)
+    ClearFilters ->
+      ({ model | startDate = "", endDate = "", startHour = -1, endHour = -1 }
+      , Effects.none)
     SubmitAddMeal ->
       if newMealValid model then
         (model, postMeal model)
@@ -346,7 +357,14 @@ filterMeals model meals =
 mealsTable : Address Action -> Model -> List Meal -> Html
 mealsTable address model meals =
   div []
-    [ h3 [] [ text "All Meals" ]
+    [ h3 []
+        [ text "All Meals"
+        , if anyFilters model then
+            span [ class "btn btn-link", onClick address ClearFilters ]
+              [ text "clear filters" ]
+          else
+            nothing
+        ]
     , mealsFilters address model meals
     , table [ class "table table-striped" ]
         [ thead []
