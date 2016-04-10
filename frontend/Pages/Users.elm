@@ -22,6 +22,7 @@ type alias User =
   { id : Int
   , firstName : String
   , lastName : String
+  , accountType : String
   , mealCount : Int
   }
 
@@ -73,6 +74,7 @@ view address model =
               [ th [] [ text "Id" ]
               , th [] [ text "First Name" ]
               , th [] [ text "Last Name" ]
+              , th [] [ text "Type" ]
               , th [] [ text "# of Recorded Meals" ]
               ]
           ]
@@ -81,13 +83,14 @@ view address model =
     ]
 
 renderRow : User -> Html
-renderRow {id,firstName,lastName,mealCount} =
+renderRow {id,firstName,lastName,accountType,mealCount} =
   tr []
     [ td []
         [ a (clickTo <| Routes.encode (Routes.User id)) [ (toString >> text) id ]
         ]
     , td [] [ text firstName ]
     , td [] [ text lastName ]
+    , td [] [ text accountType ]
     , td [] [ (toString >> text) mealCount ]
     ]
 
@@ -117,11 +120,12 @@ usersDecoder =
 
 userDecoder : Json.Decode.Decoder User
 userDecoder =
-  Json.Decode.object4
+  Json.Decode.object5
     User
     ("id" := Json.Decode.int)
     ("first_name" := Json.Decode.string)
     ("last_name" := Json.Decode.string)
+    ("type" := Json.Decode.string)
     ("meal_count" := Json.Decode.int)
 
 displayError : Error String -> String
@@ -132,9 +136,7 @@ displayError error =
 
 successDecoder : Json.Decode.Decoder Int
 successDecoder =
-  Json.Decode.object1
-    identity
-    ("user_id" := Json.Decode.int)
+  ("user_id" := Json.Decode.int)
 
 errorDecoder : Json.Decode.Decoder String
 errorDecoder =
