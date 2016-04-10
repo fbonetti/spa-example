@@ -9,6 +9,7 @@ import Pages.Login
 import Pages.Register
 import Pages.User
 import Pages.Users
+import Pages.Logout
 
 
 initialModel : Model
@@ -84,6 +85,9 @@ mountRoute prevRoute route model =
 
     Login ->
       (model, Effects.none)
+
+    Routes.Logout ->
+      (model, Effects.map (always NoOp) (Pages.Logout.postLogout))
 
     Register ->
       (model, Effects.none)

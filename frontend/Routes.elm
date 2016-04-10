@@ -13,6 +13,7 @@ import Json.Decode
 type Route
   = Home
   | Login
+  | Logout
   | Register
   | User Int
   | Users
@@ -23,6 +24,7 @@ routeParsers : List (Matcher Route)
 routeParsers =
   [ static Home "/"
   , static Login "/login"
+  , static Logout "/logout"
   , static Register "/register"
   , dyn1 User "/users/" int "" 
   , static Users "/users"
@@ -40,6 +42,7 @@ encode route =
   case route of
     Home -> "/"
     Login -> "/login"
+    Logout -> "/logout"
     Register -> "/register"
     User id -> "/users/" ++ toString id
     Users -> "/users"

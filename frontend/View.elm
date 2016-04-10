@@ -1,10 +1,8 @@
 module View where
 
 import Html exposing (..)
-import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Signal exposing (..)
-import Json.Decode as Json
 
 import TransitStyle
 import TransitRouter exposing (getTransition)
@@ -31,6 +29,8 @@ view address model =
               [ ul [ class "nav navbar-nav" ]
                   [ li [ headerLinkClass model Login ]
                       [ a (clickTo <| Routes.encode Login) [ text "Login" ] ]
+                  , li [ headerLinkClass model Logout ]
+                      [ a (clickTo <| Routes.encode Logout) [ text "Logout" ] ]
                   , li [ headerLinkClass model Register ]
                       [ a (clickTo <| Routes.encode Register) [ text "Register" ] ]
                   , li [ headerLinkClass model Users ]
@@ -49,6 +49,8 @@ view address model =
                 text <| "This is home"
               Login ->
                 Pages.Login.view (Signal.forwardTo address LoginPageAction) model.loginModel
+              Logout ->
+                text <| "You have successfully logged out"
               Register ->
                 Pages.Register.view (Signal.forwardTo address RegisterPageAction) model.registerModel
               User _ ->
