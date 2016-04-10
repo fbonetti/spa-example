@@ -131,7 +131,7 @@ update action model =
     HandleRegisterResponse result ->
       case result of
         Ok response -> 
-          ( { model | error = Nothing }
+          ( init
           , Effects.map (always NoOp) (Routes.redirect (Routes.User response.data))
           )
         Err error ->
