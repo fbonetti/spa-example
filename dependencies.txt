@@ -1,4 +1,5 @@
 INSTALL THESE DEPENDENCIES:
 
+-- rbenv
 -- ruby
 -- elm
