@@ -102,7 +102,7 @@ class SpaExampleApp < Sinatra::Base
       user = User.includes(:meals).order("meals.created_at DESC").find_by(id: params[:id])
       if user
         if current_user.id == user.id || current_user.user_manager? || current_user.admin?
-          if user.update(first_name: @payload['first_name'], last_name: @payload['last_name'])
+          if user.update(@payload.slice('first_name', 'last_name', 'daily_limit'))
             user.safe_attributes.to_json
           else
             { error: user.errors.full_messages.join(', ') }.to_json

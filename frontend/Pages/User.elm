@@ -24,6 +24,7 @@ type alias Model =
   , error : Maybe String
   , firstName : String
   , lastName : String
+  , dailyLimit : Int
   , editingUser : Bool
   , description : String
   , calories : Int
@@ -37,6 +38,7 @@ type alias User =
   { id : Int
   , firstName : String
   , lastName : String
+  , dailyLimit : Int
   , meals : List Meal
   }
 
@@ -53,6 +55,7 @@ init =
   , error = Nothing
   , firstName = ""
   , lastName = ""
+  , dailyLimit = 0
   , editingUser = False
   , description = ""
   , calories = 0
@@ -72,6 +75,7 @@ type Action
     = NoOp
     | SetFirstName String
     | SetLastName String
+    | SetDailyLimit Int
     | SetDescription String
     | SetEditingUser Bool
     | SetCalories Int
@@ -96,6 +100,8 @@ update action model =
       ({ model | firstName = firstName }, Effects.none)
     SetLastName lastName ->
       ({ model | lastName = lastName }, Effects.none)
+    SetDailyLimit dailyLimit ->
+      ({ model | dailyLimit = dailyLimit }, Effects.none)
     SetEditingUser editingUser ->
       ({ model | editingUser = editingUser }, Effects.none)
     SetDescription description ->
@@ -123,6 +129,7 @@ update action model =
           ({ model | user = Just response.data,
               firstName = response.data.firstName,
               lastName = response.data.lastName,
+              dailyLimit = response.data.dailyLimit,
               error = Nothing }
           , Effects.none)
         Err error ->
@@ -146,6 +153,7 @@ update action model =
               user = Just response.data,
               firstName = response.data.firstName,
               lastName = response.data.lastName,
+              dailyLimit = response.data.dailyLimit,
               editingUser = False,
               error = Nothing }
           , Effects.none
@@ -218,18 +226,20 @@ renderPage address model user =
 userStats : Address Action -> User -> Html
 userStats address user =
   div [ onClick address (SetEditingUser True) ]
-    [ h2 [  ]
+    [ h2 []
         [ i [ class "fa fa-pencil" ] []
         , text " "
         , text (user.firstName ++ " " ++ user.lastName ++ "'s Meals")
         ]
+    , h3 [] [ text ("Daily Limit: " ++ (toString user.dailyLimit)) ]
     ]
 
 userStatsForm : Address Action -> Model -> Html
-userStatsForm address {firstName,lastName} =
+userStatsForm address {firstName,lastName,dailyLimit} =
   form [ onSubmitPreventDefault address SubmitUserEdit ]
     [ input [ type' "text", value firstName, onChange address SetFirstName ] []
     , input [ type' "text", value lastName, onChange address SetLastName ] []
+    , input [ type' "text", value (toString dailyLimit), onChange address (safeStrToInt >> SetDailyLimit) ] []
     , button [ type' "submit" ] [ text "save" ]
     ]
 
@@ -417,11 +427,12 @@ postMeal {user, description, calories} =
       |> Effects.task
 
 postUserEdit : Model -> Effects Action
-postUserEdit {firstName, lastName, user} =
+postUserEdit {firstName, lastName, dailyLimit, user} =
   let
     json = Json.Encode.object
       [ ("first_name", Json.Encode.string firstName)
       , ("last_name", Json.Encode.string lastName)
+      , ("daily_limit", Json.Encode.int dailyLimit)
       ]
   in
     patch ("/api/v1/users/" ++ (getUserId >> toString) user)
@@ -445,11 +456,12 @@ deleteMeal mealId =
 
 userDecoder : Json.Decode.Decoder User
 userDecoder =
-  Json.Decode.object4
+  Json.Decode.object5
     User
     ("id" := Json.Decode.int)
     ("first_name" := Json.Decode.string)
     ("last_name" := Json.Decode.string)
+    ("daily_limit" := Json.Decode.int)
     ("meals" := Json.Decode.list mealDecoder)
 
 mealDecoder : Json.Decode.Decoder Meal
