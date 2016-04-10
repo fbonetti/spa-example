@@ -14,14 +14,14 @@ import Bootstrap.Form
 import Bootstrap.Alert
 import Http.Extra exposing (..)
 import Date exposing (Date)
-import Date.Config
 import Date.Format
 import String
 
 -- MODEL
 
 type alias Model =
-  { user : Maybe User
+  { currentTime : Date
+  , user : Maybe User
   , error : Maybe String
   , firstName : String
   , lastName : String
@@ -50,9 +50,10 @@ type alias Meal =
   , createdAt : Int
   }
 
-init : Model
-init =
-  { user = Nothing
+init : Date -> Model
+init currentTime =
+  { currentTime = currentTime
+  , user = Nothing
   , error = Nothing
   , firstName = ""
   , lastName = ""
@@ -69,6 +70,20 @@ init =
 newMealValid : Model -> Bool
 newMealValid {description,calories} =
   String.length description > 0 && calories > 0
+
+todaysMeals : Date -> List Meal -> List Meal
+todaysMeals currentTime meals =
+  let
+    createdAtToIsoDateStr = ((*) 1000 >> toFloat >> Date.fromTime >> Date.Format.isoDateString)
+    currentDateStr = Date.Format.isoDateString currentTime
+  in
+    List.filter
+      (\{createdAt} -> createdAtToIsoDateStr createdAt == currentDateStr)
+      meals
+
+todaysCalories : Date -> List Meal -> Int
+todaysCalories currentTime =
+  todaysMeals currentTime >> List.map .calories >> List.sum
 
 -- UPDATE
 
@@ -218,22 +233,27 @@ renderPage address model user =
     [ case model.error of
         Just errorMessage -> renderError errorMessage
         Nothing -> nothing
-    , (if model.editingUser then userStatsForm address model else userStats address user)
+    , (if model.editingUser then userStatsForm address model else userStats address model user)
     , addMeal address model user
     , hr [] []
     , mealsTable address model user.meals
     ]
 
-userStats : Address Action -> User -> Html
-userStats address user =
-  div [ onClick address (SetEditingUser True) ]
-    [ h2 []
-        [ i [ class "fa fa-pencil" ] []
-        , text " "
-        , text (user.firstName ++ " " ++ user.lastName ++ "'s Meals")
-        ]
-    , h3 [] [ text ("Daily Limit: " ++ (toString user.dailyLimit)) ]
-    ]
+userStats : Address Action -> Model -> User -> Html
+userStats address {currentTime} user =
+  let
+    caloriesToday = todaysCalories currentTime user.meals
+  in
+    div [ onClick address (SetEditingUser True) ]
+      [ h2 []
+          [ i [ class "fa fa-pencil" ] []
+          , text " "
+          , text (user.firstName ++ " " ++ user.lastName ++ "'s Meals")
+          ]
+      , h3 [] [ text ("Daily Limit: " ++ (toString user.dailyLimit)) ]
+      , h3 [ class (if caloriesToday > user.dailyLimit then "text-danger" else "text-success")]
+          [ text ("Today's calories: " ++ (toString caloriesToday)) ]
+      ]
 
 userStatsForm : Address Action -> Model -> Html
 userStatsForm address {firstName,lastName,dailyLimit} =

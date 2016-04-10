@@ -1,5 +1,7 @@
 module Model where
 
+import Date exposing (Date)
+
 import TransitRouter exposing (WithRoute)
 import Routes exposing (Route)
 import Pages.Login
@@ -9,7 +11,7 @@ import Pages.Users
 
 
 type alias Model = WithRoute Route
-  { page : Int
+  { currentTime : Date
   , loginModel : Pages.Login.Model
   , registerModel : Pages.Register.Model
   , userModel : Pages.User.Model

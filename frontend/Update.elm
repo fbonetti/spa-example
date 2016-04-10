@@ -1,6 +1,7 @@
 module Update where
 
 import Effects exposing (Effects, none)
+import Date exposing (Date)
 import TransitRouter
 
 import Model exposing (..)
@@ -12,13 +13,13 @@ import Pages.Users
 import Pages.Logout
 
 
-initialModel : Model
-initialModel =
+initialModel : Date -> Model
+initialModel currentTime =
   { transitRouter = TransitRouter.empty EmptyRoute
-  , page = 0
+  , currentTime = currentTime
   , loginModel = Pages.Login.init
   , registerModel = Pages.Register.init
-  , userModel = Pages.User.init
+  , userModel = Pages.User.init currentTime
   , usersModel = Pages.Users.init
   }
 
@@ -38,9 +39,9 @@ routerConfig =
   }
 
 
-init : String -> (Model, Effects Action)
-init path =
-  TransitRouter.init routerConfig path initialModel
+init : String -> Date -> (Model, Effects Action)
+init path currentTime =
+  TransitRouter.init routerConfig path (initialModel currentTime)
 
 
 update : Action -> Model -> (Model, Effects Action)
@@ -93,7 +94,7 @@ mountRoute prevRoute route model =
       (model, Effects.none)
 
     User id ->
-      ({ model | userModel = Pages.User.init }, Effects.map UserPageAction (Pages.User.fetchUser id))
+      ({ model | userModel = Pages.User.init model.currentTime }, Effects.map UserPageAction (Pages.User.fetchUser id))
 
     Users ->
       (model, Effects.map UsersPageAction Pages.Users.fetchUsers)

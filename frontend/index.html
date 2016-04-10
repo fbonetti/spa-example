@@ -13,7 +13,10 @@
   </body>
 
   <script type="text/javascript">
-    var elmApp = Elm.fullscreen(Elm.Main, {initialPath: window.location.pathname});
+    var elmApp = Elm.fullscreen(Elm.Main, {
+      initialPath: window.location.pathname,
+      currentTime: Date.now()
+    });
   </script>
 
 </html>

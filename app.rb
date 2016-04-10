@@ -147,6 +147,7 @@ class SpaExampleApp < Sinatra::Base
       meal = Meal.find_by(id: params['id'])
       if meal
         if current_user.id == meal.user_id || current_user.admin?
+          meal.destroy
           { meal_id: meal.id }.to_json
         else
           status 403
