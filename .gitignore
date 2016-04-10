@@ -2,3 +2,4 @@
 /frontend/build
 /public/elm.js
 .bundle
+.env

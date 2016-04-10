@@ -14,5 +14,5 @@ test:
 production:
   <<: *default
   database: spa_example_production
-  username: defaultapp
-  password: <%= ENV['DEFAULTAPP_DATABASE_PASSWORD'] %>
+  username: deployer
+  password: <%= ENV['DATABASE_PASSWORD'] %>
