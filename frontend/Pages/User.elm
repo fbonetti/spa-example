@@ -234,8 +234,9 @@ view address model =
     Just user ->
       renderPage address model user
     Nothing ->
-      renderError (model.error |> Maybe.withDefault "Something went wrong")
-      
+      case model.error of
+        Just message -> renderError message
+        Nothing -> text "Loading..."
 
 renderError : String -> Html
 renderError errorMessage =

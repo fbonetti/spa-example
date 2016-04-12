@@ -7,7 +7,7 @@ import Signal exposing (Address)
 
 dismissible : Address a -> a -> String -> String -> Html
 dismissible address action alertClass message =
-  div [ class ("alert alert-warning alert-" ++ alertClass) ]
+  div [ class ("alert alert-" ++ alertClass) ]
     [ button [ type' "button", class "close", onClick address action ]
         [ span [] [ text "×" ]
         ]
@@ -16,6 +16,6 @@ dismissible address action alertClass message =
 
 static : String -> String -> Html
 static alertClass message =
-  div [ class ("alert alert-warning alert-" ++ alertClass) ]
+  div [ class ("alert alert-" ++ alertClass) ]
     [ text message
     ]
